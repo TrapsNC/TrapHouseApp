@@ -1,0 +1,18 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const ts=require('typescript');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../lib/quote.ts'),'utf8');
+const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
+const sandbox={exports:{}};vm.runInNewContext(compiled,sandbox);
+const quoteCart=sandbox.exports.quoteCart;
+const product={id:'product',name:'Product',price:'10.00',stock:5,active:true,image_url:null};
+const variant={id:'variant',product_id:'product',price:'12.50',stock:4,active:true,image_url:null,option1_value:'Option',option2_value:null,option3_value:null};
+const item={lineId:'line',productId:'product',variantId:'variant',name:'old name',variant:'old option',price:12.5,quantity:1,fulfillment:'pickup',image:null};
+test('aggregate duplicated variants across fulfillment methods before checking stock',()=>{const q=quoteCart([{...item,quantity:3},{...item,lineId:'second',quantity:2,fulfillment:'shipping'}],[product],[variant],new Set(['product']));assert.equal(q.canCheckout,false);assert.match(q.items[0].error,/requests 5/);});
+test('server inventory owns the price and reports a changed client price',()=>{const q=quoteCart([{...item,price:.01}],[product],[variant],new Set(['product']));assert.equal(q.subtotal,12.5);assert.equal(q.items[0].priceChanged,true);});
+test('variant must belong to the requested product',()=>{const q=quoteCart([item],[product],[{...variant,product_id:'other'}],new Set(['product']));assert.equal(q.canCheckout,false);});
+test('cannot bypass product options using a null variant',()=>{const q=quoteCart([{...item,variantId:null}],[product],[variant],new Set(['product']));assert.equal(q.canCheckout,false);assert.match(q.items[0].error,/option/);});
+test('sold out and inactive variants block checkout',()=>{for(const row of [{...variant,stock:0},{...variant,active:false}]) assert.equal(quoteCart([item],[product],[row],new Set(['product'])).canCheckout,false);});
+test('base product with no variants can check out and totals use cents',()=>{const q=quoteCart([{...item,variantId:null,price:.1,quantity:3}],[{...product,price:.1}],[],new Set());assert.equal(q.subtotal,.3);assert.equal(q.canCheckout,true);});
