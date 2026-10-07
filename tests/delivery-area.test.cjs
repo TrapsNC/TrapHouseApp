@@ -1,0 +1,10 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const ts = require('typescript');
+const mod = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(require('node:path').join(__dirname,'../lib/delivery-area.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{module:mod,exports:mod.exports});
+const {deliveryIsAvailable,deliveryZips} = mod.exports;
+test('all 21 approved delivery ZIP codes are accepted only in NC',()=>{assert.equal(deliveryZips.length,21); for(const zip of deliveryZips){assert.equal(deliveryIsAvailable('NC',zip),true);assert.equal(deliveryIsAvailable('CA',zip),false);}});
+test('outside-area, PO box and malformed ZIP codes are rejected',()=>{for(const zip of ['27588','27528','27602','27611','27701','27597','276010','27601-1234',''])assert.equal(deliveryIsAvailable('NC',zip),false);});

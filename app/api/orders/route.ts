@@ -1,3 +1,4 @@
+import { deliveryIsAvailable } from "@/lib/delivery-area";
 import { shippingIsApproved } from "@/lib/shipping-policy";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
@@ -187,14 +188,10 @@ export async function POST(
     );
 
     const deliveryState = cleanString(
-      body.deliveryState,
-      2
-    ).toUpperCase();
+      body.deliveryState, 100).toUpperCase();
 
     const deliveryZip = cleanString(
-      body.deliveryZip,
-      5
-    );
+      body.deliveryZip, 100);
 
     const fulfillment = cleanString(
       body.fulfillment,
@@ -287,25 +284,7 @@ export async function POST(
     if (
       fulfillment === "delivery"
     ) {
-      const allowedDeliveryZips =
-        envList(
-          "ALLOWED_DELIVERY_ZIPS"
-        );
-
-      if (
-        allowedDeliveryZips.length === 0
-      ) {
-        return fail(
-          "Local delivery is not available yet.",
-          503
-        );
-      }
-
-      if (
-        !allowedDeliveryZips.includes(
-          deliveryZip
-        )
-      ) {
+      if (!deliveryIsAvailable(deliveryState, deliveryZip)) {
         return fail(
           "Local delivery is not available to this ZIP code."
         );
