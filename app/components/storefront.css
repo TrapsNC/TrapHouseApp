@@ -1257,3 +1257,9 @@ body {
     gap: 36px 24px !important;
   }
 }
+
+.store-cart-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

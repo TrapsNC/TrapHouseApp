@@ -73,10 +73,22 @@ export function StoreHeader() {
             }
             className="store-cart-button"
           >
-            Cart{" "}
-            <span aria-hidden="true">
-              ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â€
-            </span>
+            <span>Cart</span>
+            <svg
+              aria-hidden="true"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="9" cy="20" r="1" />
+              <circle cx="19" cy="20" r="1" />
+              <path d="M3 4h2l2.4 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L21 7H6" />
+            </svg>
           </button>
         </div>
 
