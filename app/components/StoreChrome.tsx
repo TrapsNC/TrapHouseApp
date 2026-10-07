@@ -75,7 +75,7 @@ export function StoreHeader() {
           >
             Cart{" "}
             <span aria-hidden="true">
-              Ã¢â€ â€”
+              ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â€
             </span>
           </button>
         </div>
@@ -127,7 +127,7 @@ export function StoreHeader() {
                 setOpen(false)
               }
             >
-              Ãƒâ€”
+              ÃƒÆ’Ã¢â‚¬â€
             </button>
           </div>
 
@@ -146,7 +146,7 @@ export function StoreHeader() {
               setOpen(false)
             }
           >
-            View full cart Ã¢â€ â€™
+            View full cart ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
           </Link>
 
           <button
@@ -271,7 +271,7 @@ export function StoreFooter() {
       </p>
 
       <p className="store-footer-small">
-        Ã‚Â© {year} TRAP HOUSE NC
+        Ãƒâ€šÃ‚Â© {year} TRAP HOUSE NC
       </p>
     </footer>
   );
