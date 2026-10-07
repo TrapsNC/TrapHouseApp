@@ -44,7 +44,7 @@ export function StoreHeader() {
       <header className="store-header">
         <div className="store-header-top">
           <Link
-            href="/#shop"
+            href="/shop#shop"
             className="store-search-link"
           >
             Search
@@ -75,7 +75,7 @@ export function StoreHeader() {
           >
             Cart{" "}
             <span aria-hidden="true">
-              ↗
+              â†—
             </span>
           </button>
         </div>
@@ -88,7 +88,7 @@ export function StoreHeader() {
             (category) => (
               <a
                 key={category}
-                href={`/?category=${category}#shop`}
+                href={`/shop?category=${category}#shop`}
               >
                 {category}
               </a>
@@ -127,7 +127,7 @@ export function StoreHeader() {
                 setOpen(false)
               }
             >
-              ×
+              Ã—
             </button>
           </div>
 
@@ -146,7 +146,7 @@ export function StoreHeader() {
               setOpen(false)
             }
           >
-            View full cart →
+            View full cart â†’
           </Link>
 
           <button
@@ -192,7 +192,7 @@ export function StoreFooter() {
       </p>
 
       <div className="store-footer-links">
-        <Link href="/#shop">
+        <Link href="/shop#shop">
           SHOP ALL
         </Link>
 
@@ -200,7 +200,7 @@ export function StoreFooter() {
           (category) => (
             <a
               key={category}
-              href={`/?category=${category}#shop`}
+              href={`/shop?category=${category}#shop`}
             >
               {category}
             </a>
@@ -266,7 +266,7 @@ export function StoreFooter() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Your privacy choices ↗
+          Your privacy choices â†—
         </a>
       </nav>
 
@@ -277,7 +277,7 @@ export function StoreFooter() {
       </p>
 
       <p className="store-footer-small">
-        © {year} TRAP HOUSE NC
+        Â© {year} TRAP HOUSE NC
       </p>
     </footer>
   );

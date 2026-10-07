@@ -1,209 +1,156 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { collectionFor, collections } from "@/lib/catalog";
+import { useEffect, useState } from "react";
 import { StoreFooter, StoreHeader } from "./components/StoreChrome";
-const categoryImages: Record<string, string> = {
-  DISPOSABLES: "/categories/disposables.png",
-  THCA: "/categories/thca.png",
-  TOBACCO: "/categories/tobacco.png",
-  ACCESSORIES: "/categories/accessories.png",
-};
 
-type Product = {
-  id: string;
-  name: string;
-  category: string;
-  price: number | string;
-  stock: number;
-  image_url?: string | null;
-  handle?: string | null;
-};
+const homeCategories = [
+  {
+    name: "DISPOSABLES",
+    image: "/categories/disposables.png",
+    href: "/shop?category=DISPOSABLES#shop",
+  },
+  {
+    name: "THCA",
+    image: "/categories/thca.png",
+    href: "/shop?category=THCA#shop",
+  },
+  {
+    name: "TOBACCO",
+    image: "/categories/tobacco.png",
+    href: "/shop?category=TOBACCO#shop",
+  },
+  {
+    name: "ACCESSORIES",
+    image: "/categories/accessories.png",
+    href: "/shop?category=ACCESSORIES#shop",
+  },
+];
 
 export default function Home() {
   const [verified, setVerified] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("ALL");
-  const [sort, setSort] = useState("newest");
-  const [inStock, setInStock] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const initial = new URLSearchParams(
-      window.location.search
-    ).get("category");
-
-    if (initial) {
-      setCategory(initial);
-    }
-
     setVerified(
-      sessionStorage.getItem("trap-age-confirmed") ===
-        "true"
+      sessionStorage.getItem("trap-age-confirmed") === "true"
     );
 
-    async function load() {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("active", true)
-        .order("created_at", {
-          ascending: false,
-        });
-
-      if (error) {
-        setError(
-          "Inventory could not be loaded. Please refresh and try again."
-        );
-      } else {
-        setProducts(data || []);
-      }
-
-      setLoading(false);
-    }
-
-    void load();
+    setReady(true);
   }, []);
 
-  const filtered = useMemo(() => {
-    const result = products.filter((product) => {
-      const group = collectionFor(
-        product.category,
-        product.name
-      );
-
-      return (
-        (category === "ALL" || group === category) &&
-        (!inStock || product.stock > 0) &&
-        `${product.name} ${group}`
-          .toLowerCase()
-          .includes(search.trim().toLowerCase())
-      );
-    });
-
-    if (sort === "price-low") {
-      result.sort(
-        (a, b) =>
-          Number(a.price) - Number(b.price)
-      );
-    }
-
-    if (sort === "price-high") {
-      result.sort(
-        (a, b) =>
-          Number(b.price) - Number(a.price)
-      );
-    }
-
-    if (sort === "name") {
-      result.sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
-    }
-
-    return result;
-  }, [
-    products,
-    category,
-    inStock,
-    search,
-    sort,
-  ]);
-
-  const categoryOptions = Array.from(
-    new Set([
-      ...collections,
-      ...products.map((product) =>
-        collectionFor(
-          product.category,
-          product.name
-        )
-      ),
-    ])
-  );
-
-  function chooseCategory(value: string) {
-    setCategory(value);
-
-    const url = new URL(
-      window.location.href
+  if (!ready) {
+    return (
+      <main
+        className="storefront min-h-screen"
+        style={{ background: "#050505" }}
+      />
     );
-
-    if (value === "ALL") {
-      url.searchParams.delete("category");
-    } else {
-      url.searchParams.set(
-        "category",
-        value
-      );
-    }
-
-    window.history.replaceState(
-      null,
-      "",
-      url
-    );
-
-    document
-      .getElementById("shop")
-      ?.scrollIntoView({
-        behavior: "smooth",
-      });
   }
 
   if (!verified) {
     return (
       <main
+        className="storefront min-h-screen flex items-center justify-center p-6"
         style={{
           background: "#050505",
           color: "white",
         }}
-        className="storefront min-h-screen flex items-center justify-center bg-black p-6 text-white"
       >
-        <section className="max-w-md border border-zinc-700 p-10 text-center">
-          <p className="text-xs tracking-widest">
+        <section
+          style={{
+            width: "100%",
+            maxWidth: 440,
+            border: "1px solid #3f3f46",
+            padding: 40,
+            textAlign: "center",
+          }}
+        >
+          <img
+            src="/trap-house-logo.png"
+            alt="TRAP HOUSE NC"
+            style={{
+              width: 130,
+              height: 130,
+              objectFit: "cover",
+              borderRadius: "50%",
+              margin: "0 auto 24px",
+            }}
+          />
+
+          <p
+            style={{
+              fontSize: 11,
+              letterSpacing: ".2em",
+              color: "#aaa",
+            }}
+          >
             WELCOME TO
           </p>
 
-          <h1 className="mt-4 text-4xl font-bold">
+          <h1
+            style={{
+              marginTop: 12,
+              fontSize: 38,
+              fontWeight: 800,
+            }}
+          >
             TRAP HOUSE NC
           </h1>
 
-          <p className="mt-6 text-zinc-300">
-            You must be 21 or older to
-            enter.
+          <p
+            style={{
+              marginTop: 22,
+              color: "#ccc",
+              lineHeight: 1.6,
+            }}
+          >
+            You must be 21 or older to enter.
           </p>
 
           <button
-            className="mt-8 w-full bg-white p-4 font-bold text-black"
             onClick={() => {
               sessionStorage.setItem(
                 "trap-age-confirmed",
                 "true"
               );
-
               setVerified(true);
+            }}
+            style={{
+              marginTop: 30,
+              width: "100%",
+              background: "white",
+              color: "#050505",
+              padding: 16,
+              fontWeight: 800,
+              letterSpacing: ".08em",
             }}
           >
             I AM 21+
           </button>
 
           <a
-            className="mt-4 block border border-zinc-500 p-4"
             href="https://google.com"
+            style={{
+              display: "block",
+              marginTop: 12,
+              border: "1px solid #555",
+              padding: 16,
+            }}
           >
             EXIT
           </a>
 
-          <p className="mt-6 text-xs text-zinc-400">
-            Age confirmation does not
-            replace legally required age
-            verification for regulated
-            purchases.
+          <p
+            style={{
+              marginTop: 22,
+              fontSize: 11,
+              color: "#777",
+              lineHeight: 1.6,
+            }}
+          >
+            Age confirmation does not replace legally
+            required age verification for regulated purchases.
           </p>
         </section>
       </main>
@@ -214,281 +161,353 @@ export default function Home() {
     <main className="storefront min-h-screen">
       <StoreHeader />
 
-      <div className="store-container">
-
-        <p className="store-kicker">
-          TRAP HOUSE NC / COLLECTIONS
-        </p>
-
-        <h1 className="store-title">
-          Find your next favorite.
-        </h1>
-
-        <p className="store-intro">
-          Explore disposables, THCA,
-          tobacco and everyday
-          essentials. Choose your
-          products, then select pickup,
-          local delivery or shipping.
-        </p>
-
-        <section
-          aria-label="Shop collections"
-          className="store-collections"
+      <section
+        style={{
+          background:
+            "radial-gradient(circle at 80% 40%, #3a260c 0%, #15100a 24%, #050505 62%)",
+          color: "white",
+          minHeight: "clamp(520px, 72vh, 760px)",
+          display: "flex",
+          alignItems: "center",
+          padding: "70px 24px",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1200,
+            width: "100%",
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(300px, 1fr))",
+            alignItems: "center",
+            gap: 48,
+          }}
         >
-          {collections.map((group) => (
-            <button
+          <div>
+            <p
+              style={{
+                fontSize: 11,
+                letterSpacing: ".22em",
+                color: "#d3ad62",
+                marginBottom: 18,
+              }}
+            >
+              WELCOME TO THE TRAP
+            </p>
+
+            <h1
+              style={{
+                fontSize: "clamp(48px, 8vw, 90px)",
+                lineHeight: .94,
+                letterSpacing: "-.04em",
+                fontWeight: 900,
+                maxWidth: 700,
+              }}
+            >
+              TRAP
+              <br />
+              HOUSE NC
+            </h1>
+
+            <p
+              style={{
+                maxWidth: 570,
+                marginTop: 28,
+                color: "#bbb",
+                lineHeight: 1.7,
+                fontSize: 16,
+              }}
+            >
+              Shop disposables, THCA, tobacco,
+              accessories and more from one place.
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 12,
+                marginTop: 32,
+              }}
+            >
+              <Link
+                href="/shop"
+                style={{
+                  background: "white",
+                  color: "#050505",
+                  padding: "16px 26px",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  letterSpacing: ".1em",
+                }}
+              >
+                SHOP ALL
+              </Link>
+
+              <Link
+                href="/shop?category=THCA#shop"
+                style={{
+                  border: "1px solid #777",
+                  color: "white",
+                  padding: "16px 26px",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  letterSpacing: ".1em",
+                }}
+              >
+                SHOP THCA
+              </Link>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <img
+              src="/trap-house-logo.png"
+              alt="TRAP HOUSE NC"
+              style={{
+                width: "min(420px, 82vw)",
+                height: "auto",
+                display: "block",
+                borderRadius: "50%",
+              }}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "75px 24px",
+        }}
+      >
+        <p className="store-kicker">
+          SHOP THE TRAP
+        </p>
+
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "end",
+            gap: 20,
+            marginBottom: 36,
+          }}
+        >
+          <div>
+            <h2 className="store-title">
+              Choose your category.
+            </h2>
+
+            <p className="store-intro">
+              Jump straight into what you came for,
+              or browse the full shop.
+            </p>
+          </div>
+
+          <Link
+            href="/shop"
+            style={{
+              fontSize: 12,
+              letterSpacing: ".1em",
+              textDecoration: "underline",
+              textUnderlineOffset: 5,
+            }}
+          >
+            VIEW ALL PRODUCTS
+          </Link>
+        </div>
+
+        <div className="store-collections">
+          {homeCategories.map((item) => (
+            <Link
               className="store-collection"
-              key={group}
-              onClick={() => chooseCategory(group)}
+              href={item.href}
+              key={item.name}
             >
               <img
-                src={
-                  categoryImages[group] ||
-                  "/categories/accessories.png"
-                }
-                alt={`${group} collection`}
+                src={item.image}
+                alt={`${item.name} collection`}
               />
 
               <span>
-                {group}{" "}
-                <span
-                  aria-hidden="true"
-                  style={{ display: "inline" }}
-                >
-                  ↗
-                </span>
+                {item.name}
               </span>
-            </button>
+            </Link>
           ))}
-        </section>
+        </div>
+      </section>
 
-        <section
-          id="shop"
+      <section
+        style={{
+          background: "#050505",
+          color: "white",
+          padding: "80px 24px",
+        }}
+      >
+        <div
           style={{
-            scrollMarginTop: 24,
+            maxWidth: 1200,
+            margin: "0 auto",
           }}
         >
-
-          <p className="store-kicker">
-            SHOP THE COLLECTION
+          <p
+            style={{
+              color: "#999",
+              fontSize: 11,
+              letterSpacing: ".18em",
+            }}
+          >
+            SHOP YOUR WAY
           </p>
 
-          <h2 className="store-title">
-            {category === "ALL"
-              ? "All products"
-              : category
-                  .charAt(0)
-                  .toUpperCase() +
-                category
-                  .slice(1)
-                  .toLowerCase()}
+          <h2
+            style={{
+              fontSize: "clamp(34px, 5vw, 56px)",
+              margin: "12px 0 40px",
+              lineHeight: 1.05,
+            }}
+          >
+            Pickup. Delivery. Shipping.
           </h2>
 
-          <div className="store-tools">
-
-            <input
-              aria-label="Search products"
-              placeholder="Search productsâ€¦"
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value
-                )
-              }
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(230px, 1fr))",
+              gap: 18,
+            }}
+          >
+            <HomeInfoCard
+              number="01"
+              title="STORE PICKUP"
+              text="Place your order online and pick it up when it is ready."
             />
 
-            <select
-              aria-label="Collection"
-              value={category}
-              onChange={(event) =>
-                chooseCategory(
-                  event.target.value
-                )
-              }
-            >
-              <option value="ALL">
-                All collections
-              </option>
+            <HomeInfoCard
+              number="02"
+              title="LOCAL DELIVERY"
+              text="Eligible local orders can choose delivery where available."
+            />
 
-              {categoryOptions.map(
-                (group) => (
-                  <option key={group}>
-                    {group}
-                  </option>
-                )
-              )}
-            </select>
-
-            <select
-              aria-label="Sort products"
-              value={sort}
-              onChange={(event) =>
-                setSort(
-                  event.target.value
-                )
-              }
-            >
-              <option value="newest">
-                Newest first
-              </option>
-
-              <option value="price-low">
-                Price: low to high
-              </option>
-
-              <option value="price-high">
-                Price: high to low
-              </option>
-
-              <option value="name">
-                Name: Aâ€“Z
-              </option>
-            </select>
-
-            <label className="text-xs flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={inStock}
-                onChange={(event) =>
-                  setInStock(
-                    event.target.checked
-                  )
-                }
-                style={{
-                  minWidth: 0,
-                  flex: 0,
-                }}
-              />
-
-              In stock only
-            </label>
-
+            <HomeInfoCard
+              number="03"
+              title="SHIPPING"
+              text="Eligible products can be shipped to permitted destinations."
+            />
           </div>
+        </div>
+      </section>
 
-          <p
-            className="store-result-count"
-            role="status"
-          >
-            {loading
-              ? "Loading productsâ€¦"
-              : error ||
-                `${filtered.length} products`}
-          </p>
+      <section
+        style={{
+          padding: "90px 24px",
+          textAlign: "center",
+        }}
+      >
+        <p className="store-kicker">
+          READY?
+        </p>
 
-          <div className="store-grid">
+        <h2
+          style={{
+            fontSize: "clamp(38px, 7vw, 72px)",
+            margin: "14px auto 20px",
+            lineHeight: 1,
+          }}
+        >
+          ENTER THE SHOP.
+        </h2>
 
-            {filtered.map(
-              (product) => {
-                const content = (
-                  <>
-                    <div className="store-card-image">
+        <p
+          style={{
+            color: "#666",
+            maxWidth: 500,
+            margin: "0 auto 30px",
+            lineHeight: 1.7,
+          }}
+        >
+          Browse all available products,
+          categories and current inventory.
+        </p>
 
-                      {product.image_url ? (
-                        <img
-                          loading="lazy"
-                          src={
-                            product.image_url
-                          }
-                          alt={
-                            product.name
-                          }
-                        />
-                      ) : (
-                        <div className="aspect-square flex items-center justify-center text-sm text-zinc-400">
-                          TRAP HOUSE
-                        </div>
-                      )}
-
-                      {product.stock <=
-                        0 && (
-                        <span className="store-card-badge">
-                          SOLD OUT
-                        </span>
-                      )}
-
-                    </div>
-
-                    <p className="store-kicker">
-                      {collectionFor(
-                        product.category,
-                        product.name
-                      )}
-                    </p>
-
-                    <h3>
-                      {product.name}
-                    </h3>
-
-                    <p className="store-card-price">
-                      $
-                      {Number(
-                        product.price
-                      ).toFixed(2)}
-                    </p>
-
-                    <span className="store-card-action">
-                      {product.stock <=
-                      0
-                        ? "VIEW PRODUCT Â· SOLD OUT"
-                        : "CHOOSE OPTIONS"}
-                    </span>
-                  </>
-                );
-
-                return (
-                  <Link
-                    className="store-card"
-                    key={
-                      product.id
-                    }
-                    href={`/product/${
-                      product.handle ||
-                      product.id
-                    }`}
-                  >
-                    {content}
-                  </Link>
-                );
-              }
-            )}
-
-          </div>
-
-          {!loading &&
-            !error &&
-            !filtered.length && (
-              <div className="py-12 text-center">
-
-                <p>
-                  No products match your
-                  filters.
-                </p>
-
-                <button
-                  className="mt-4 underline"
-                  onClick={() => {
-                    setSearch("");
-                    setInStock(
-                      false
-                    );
-                    chooseCategory(
-                      "ALL"
-                    );
-                  }}
-                >
-                  Clear filters
-                </button>
-
-              </div>
-            )}
-
-        </section>
-
-      </div>
+        <Link
+          href="/shop"
+          style={{
+            display: "inline-block",
+            background: "#050505",
+            color: "white",
+            padding: "17px 30px",
+            fontSize: 12,
+            fontWeight: 800,
+            letterSpacing: ".12em",
+          }}
+        >
+          SHOP NOW
+        </Link>
+      </section>
 
       <StoreFooter />
-
     </main>
+  );
+}
+
+function HomeInfoCard({
+  number,
+  title,
+  text,
+}: {
+  number: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div
+      style={{
+        border: "1px solid #333",
+        padding: 30,
+      }}
+    >
+      <p
+        style={{
+          fontSize: 10,
+          color: "#777",
+          letterSpacing: ".14em",
+          marginBottom: 28,
+        }}
+      >
+        {number}
+      </p>
+
+      <h3
+        style={{
+          fontSize: 18,
+          letterSpacing: ".06em",
+          marginBottom: 12,
+        }}
+      >
+        {title}
+      </h3>
+
+      <p
+        style={{
+          color: "#aaa",
+          fontSize: 14,
+          lineHeight: 1.7,
+        }}
+      >
+        {text}
+      </p>
+    </div>
   );
 }
