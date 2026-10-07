@@ -24,6 +24,7 @@ type OrderRequest = {
   ageConfirmed?: unknown;
 
   fulfillment?: unknown;
+  paymentMethod?: unknown;
   deliveryAddress?: unknown;
   deliveryState?: unknown;
   deliveryZip?: unknown;
@@ -355,6 +356,10 @@ export async function POST(
     )) {
       return fail("One or more items are not approved for shipping to this destination.", 403);
     }
+    const paymentMethod = cleanString(body.paymentMethod, 30);
+    if (!["cashapp", "zelle", "cash"].includes(paymentMethod)) {
+      return fail("Choose Cash App, Zelle or cash.");
+    }
     const db =
       adminDatabase();
 
@@ -560,6 +565,7 @@ export async function POST(
     } = await db
       .from("orders")
       .update({
+        payment_method: paymentMethod,
         id_document_path:
           pendingId.storage_path,
 
@@ -587,6 +593,7 @@ export async function POST(
         status,
         fulfillment,
         payment_status,
+        payment_method,
         id_review_status,
         created_at
         `

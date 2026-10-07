@@ -25,6 +25,7 @@ type Order = {
   total: number | string;
   status: string;
   payment_status: string;
+  payment_method: string | null;
   id_document_path: string | null;
   id_uploaded_at: string | null;
   id_review_status: "pending" | "approved" | "rejected";
@@ -112,6 +113,21 @@ function getStatusOptions(order: Order) {
 export default function AdminOrdersPage() {
   const router = useRouter();
 
+  async function confirmPayment(order: Order) {
+    const amount = order.payment_method === "cash" ? Math.round(Number(order.total)) : Number(order.total);
+    if (!window.confirm(`Confirm you actually received ${amount.toFixed(2)} by ${order.payment_method}?`)) return;
+    setUpdatingOrder(order.id);
+    try {
+      const {data:{session}} = await supabase.auth.getSession();
+      if (!session) { router.replace("/login"); return; }
+      const response = await fetch("/api/admin/orders/payment",{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({orderId:order.id,received:true,amountCents:Math.round(amount*100)})});
+      const result = await response.json();
+      if (!response.ok) throw Error(result.error || "Could not confirm payment.");
+      setOrders(current=>current.map(existing=>existing.id===order.id?{...existing,...result.order}:existing));
+      setOrderMessages(current=>({...current,[order.id]:"Payment receipt recorded. ID approval is still required for fulfillment."}));
+    } catch(error) { setOrderMessages(current=>({...current,[order.id]:error instanceof Error?error.message:"Payment confirmation failed."})); }
+    finally { setUpdatingOrder(null); }
+  }
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -825,8 +841,10 @@ export default function AdminOrdersPage() {
 
                         <p className="mt-1 font-bold capitalize">
                           {order.payment_status}
+                          {order.payment_method && <span> · {order.payment_method}</span>}
                         </p>
 
+                        {order.payment_status !== "paid" && !["completed","cancelled"].includes(order.status) && order.payment_method && <button disabled={updatingOrder === order.id} onClick={() => void confirmPayment(order)} className="mt-2 underline">Confirm payment received ({money(order.payment_method === "cash" ? Math.round(Number(order.total)) : order.total)})</button>}
                         {order.payment_status !==
                           "paid" && (
                           <p className="mt-1 text-xs text-amber-400">

@@ -518,6 +518,8 @@ export default function CheckoutPage() {
     });
   }
 
+  const [paymentMethod, setPaymentMethod] = useState("apple");
+
   async function submitOrderRequest() {
     if (
       orderBusy ||
@@ -537,8 +539,12 @@ export default function CheckoutPage() {
       return;
     }
 
-    setOrderBusy(true);
     setOrderError("");
+    if (!["cashapp", "zelle", "cash"].includes(paymentMethod)) {
+      setOrderError("Choose Cash App, Zelle or cash below before submitting your request.");
+      return;
+    }
+    setOrderBusy(true);
 
     requestId.current ||=
       createId();
@@ -569,6 +575,7 @@ export default function CheckoutPage() {
               details.dateOfBirth,
 
             ageConfirmed,
+            paymentMethod,
 
             fulfillment,
 
@@ -1651,7 +1658,7 @@ export default function CheckoutPage() {
                             className="cart-back-link mt-5 block"
                             href="/cart"
                           >
-                            â† Back to Cart
+                            {"\u2190"} Back to Cart
                           </Link>
                         </form>
                       ) : (
@@ -1827,6 +1834,7 @@ export default function CheckoutPage() {
                           </section>
 
                           <PaymentOptions
+                            onMethodChange={setPaymentMethod}
                             disabled={
                               !quote?.canCheckout ||
                               !fulfillment
@@ -1841,7 +1849,7 @@ export default function CheckoutPage() {
                             className="cart-back-link"
                             href="/cart"
                           >
-                            â† Edit Your Cart
+                            {"\u2190"} Edit Your Cart
                           </Link>
                         </>
                       )}
