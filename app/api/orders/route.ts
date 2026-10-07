@@ -1,3 +1,4 @@
+import { notifyCustomerOfOrder } from "@/lib/customer-order-email";
 import { notifyOwnerOfOrder } from "@/lib/owner-order-email";
 import { deliveryIsAvailable } from "@/lib/delivery-area";
 import { shippingIsApproved } from "@/lib/shipping-policy";
@@ -634,7 +635,10 @@ export async function POST(
       );
     }
 
-    await notifyOwnerOfOrder(savedOrder);
+    await Promise.all([
+      notifyOwnerOfOrder(savedOrder),
+      notifyCustomerOfOrder(savedOrder, customerEmail),
+    ]);
 
     return NextResponse.json(
       {

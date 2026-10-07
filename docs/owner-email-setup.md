@@ -16,3 +16,9 @@ Each successfully created order with its ID attached triggers one send attempt. 
 Sending is disabled by default. Missing configuration, provider rejection or a five-second timeout logs a generic error and does not fail an already saved order. SendGrid accepting a message is not proof of inbox delivery. This initial integration has no durable retry queue; check the admin dashboard for orders if an alert is missed.
 
 After a synthetic alert reaches the owner's inbox, enable notifications for the store Gmail account on the owner's phone. Email delivery and phone notification settings must be verified separately before relying on alerts.
+
+## Customer confirmations
+
+Customer confirmations are independently gated by ENABLE_CUSTOMER_ORDER_EMAILS=true. They use the same verified sender and restricted SendGrid key. Leave this setting absent or false until a synthetic customer confirmation has reached a test inbox. Customer emails contain the saved order number, fee-inclusive total, fulfillment method, /track link and private tracking token with instructions to enter both on that page. They explicitly state payment has not been collected and ID review is pending. They do not contain ID documents. These emails have the same single-attempt limitation as owner alerts.
+
+Payment audit: no real payment provider or admin payment-recording endpoint is connected. Demo checkout is not evidence of a paid live order. Keep order switches OFF until a supported payment/collection workflow and real admin review/handoff test are complete.
