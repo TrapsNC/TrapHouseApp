@@ -1231,3 +1231,29 @@ body {
     white-space: normal;
   }
 }
+/* DESKTOP SHOP WIDTH FIX */
+@media(min-width:768px) {
+  .store-container {
+    max-width: 1200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+
+  .store-collections {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+  }
+
+  .store-collection img {
+    width: 100% !important;
+    height: 180px !important;
+    object-fit: cover !important;
+  }
+
+  .store-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 36px 24px !important;
+  }
+}
