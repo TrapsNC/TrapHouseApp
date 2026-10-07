@@ -1,3 +1,4 @@
+import { notifyOwnerOfOrder } from "@/lib/owner-order-email";
 import { deliveryIsAvailable } from "@/lib/delivery-area";
 import { shippingIsApproved } from "@/lib/shipping-policy";
 import { enforceRateLimit } from "@/lib/rate-limit";
@@ -632,6 +633,8 @@ export async function POST(
         pendingDeleteError.message
       );
     }
+
+    await notifyOwnerOfOrder(savedOrder);
 
     return NextResponse.json(
       {

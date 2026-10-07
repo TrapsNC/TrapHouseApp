@@ -114,7 +114,7 @@ const routes = [
 ];
 function route(file, guard, env = {}) {
   return load(file, {
-    '@/lib/delivery-area': { deliveryIsAvailable: () => false },
+    '@/lib/owner-order-email': { notifyOwnerOfOrder: async () => 'disabled' }, '@/lib/delivery-area': { deliveryIsAvailable: () => false },
     '@/lib/shipping-policy': { shippingIsApproved: () => false },
     '@/lib/rate-limit': { enforceRateLimit: guard },
     'next/server': { NextResponse: response },
