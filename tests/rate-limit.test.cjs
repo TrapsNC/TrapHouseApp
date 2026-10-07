@@ -114,6 +114,7 @@ const routes = [
 ];
 function route(file, guard, env = {}) {
   return load(file, {
+    '@/lib/shipping-policy': { shippingIsApproved: () => false },
     '@/lib/rate-limit': { enforceRateLimit: guard },
     'next/server': { NextResponse: response },
     '@/lib/admin-db': { adminDatabase: () => { throw new Error('Unexpected DB access'); } },

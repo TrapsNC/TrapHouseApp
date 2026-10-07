@@ -1,3 +1,4 @@
+import { shippingIsApproved } from "@/lib/shipping-policy";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { adminDatabase } from "@/lib/admin-db";
@@ -364,6 +365,11 @@ export async function POST(
       );
     }
 
+    if (fulfillment === "shipping" && !shippingIsApproved(
+      items, deliveryState, deliveryZip, process.env.SHIPPING_CARRIER ?? ""
+    )) {
+      return fail("One or more items are not approved for shipping to this destination.", 403);
+    }
     const db =
       adminDatabase();
 
