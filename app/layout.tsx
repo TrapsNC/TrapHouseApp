@@ -24,10 +24,10 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://traphousenc.com"),
 
   icons: {
-    icon: "/trap-house-favicon-v4.png",
-    shortcut: "/trap-house-favicon-v4.png",
-    apple: "/trap-house-favicon-v4.png",
-  },
+  icon: "/trap-house-favicon-v5.png",
+  shortcut: "/trap-house-favicon-v5.png",
+  apple: "/trap-house-favicon-v5.png",
+},
 
   openGraph: {
     title: "TRAP HOUSE NC",
