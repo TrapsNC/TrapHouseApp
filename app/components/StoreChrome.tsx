@@ -139,7 +139,7 @@ export function StoreHeader() {
                 setOpen(false)
               }
             >
-              ÃƒÆ’Ã¢â‚¬â€
+              {"\u00d7"}
             </button>
           </div>
 
@@ -158,7 +158,7 @@ export function StoreHeader() {
               setOpen(false)
             }
           >
-            View full cart ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
+            View full cart {"\u2192"}
           </Link>
 
           <button
