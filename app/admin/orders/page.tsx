@@ -22,6 +22,7 @@ type Order = {
   fulfillment: string;
   delivery_address: string | null;
   subtotal: number | string;
+  total: number | string;
   status: string;
   payment_status: string;
   id_document_path: string | null;
@@ -44,7 +45,7 @@ const statusLabels: Record<string, string> = {
 };
 
 const fulfillmentLabels: Record<string, string> = {
-  pickup: "Store Pickup",
+  pickup: "Local Meetup",
   delivery: "Local Delivery",
   shipping: "Shipping",
 };
@@ -709,7 +710,7 @@ export default function AdminOrdersPage() {
 
                     <div className="text-right">
                       <p className="text-lg font-bold">
-                        {money(order.subtotal)}
+                        {money(order.total)}
                       </p>
 
                       <p className="mt-2 text-sm text-zinc-400">

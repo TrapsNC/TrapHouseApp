@@ -1,0 +1,10 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const ts = require('typescript');
+const moduleValue = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(require('node:path').join(__dirname,'../lib/fulfillment-pricing.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{module:moduleValue,exports:moduleValue.exports});
+const { deliveryFee, orderTotal } = moduleValue.exports;
+test('local meetup has no fulfillment fee',()=>{assert.equal(deliveryFee('pickup'),0);assert.equal(orderTotal(12.50,'pickup'),12.50);});
+test('local delivery adds exactly $4.99 once to the order',()=>{assert.equal(deliveryFee('delivery'),4.99);assert.equal(orderTotal(12.50,'delivery'),17.49);assert.equal(orderTotal(0.10,'delivery'),5.09);});

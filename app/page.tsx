@@ -390,7 +390,7 @@ export default function Home() {
           >
             <HomeInfoCard
               number="01"
-              title="STORE PICKUP"
+              title="LOCAL MEETUP"
               text="Place your order online and pick it up when it is ready."
             />
 
@@ -398,12 +398,6 @@ export default function Home() {
               number="02"
               title="LOCAL DELIVERY"
               text="Eligible local orders can choose delivery where available."
-            />
-
-            <HomeInfoCard
-              number="03"
-              title="SHIPPING"
-              text="Eligible products can be shipped to permitted destinations."
             />
           </div>
         </div>

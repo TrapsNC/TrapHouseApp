@@ -425,12 +425,11 @@ function ProductContent() {
                   }`}
                 >
                   <p className="font-black">
-                    🏪 STORE PICKUP
+                    🏪 LOCAL MEETUP
                   </p>
 
                   <p className="mt-1 text-sm opacity-70">
-                    Reserve your order and pick it up
-                    at the shop.
+                    Arrange a local meetup after your order is confirmed.
                   </p>
                 </button>
 
@@ -451,26 +450,6 @@ function ProductContent() {
                   <p className="mt-1 text-sm opacity-70">
                     Delivery availability is confirmed
                     at checkout.
-                  </p>
-                </button>
-
-                <button
-                  onClick={() =>
-                    setFulfillment("shipping")
-                  }
-                  className={`w-full border p-4 text-left ${
-                    fulfillment === "shipping"
-                      ? "border-black bg-black text-white"
-                      : "border-zinc-200 bg-white"
-                  }`}
-                >
-                  <p className="font-black">
-                    📦 SHIPPING
-                  </p>
-
-                  <p className="mt-1 text-sm opacity-70">
-                    Shipping depends on product type
-                    and destination.
                   </p>
                 </button>
 

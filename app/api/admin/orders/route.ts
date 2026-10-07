@@ -129,6 +129,8 @@ export async function GET(request: Request) {
         fulfillment,
         delivery_address,
         subtotal,
+        delivery_fee,
+        total,
         status,
         payment_status,
         id_document_path,

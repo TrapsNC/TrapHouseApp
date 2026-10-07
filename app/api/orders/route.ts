@@ -262,6 +262,10 @@ export async function POST(
       );
     }
 
+    if (fulfillment === "shipping") {
+      return fail("Shipping is unavailable. Choose local meetup or local delivery.", 403);
+    }
+
     if (
       fulfillment !== "pickup"
     ) {
@@ -597,6 +601,8 @@ export async function POST(
         order_number,
         tracking_token,
         subtotal,
+        delivery_fee,
+        total,
         status,
         fulfillment,
         payment_status,

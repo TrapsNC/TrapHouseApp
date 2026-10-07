@@ -1,0 +1,2 @@
+export function deliveryFee(fulfillment: string): number { return fulfillment === "delivery" ? 4.99 : 0; }
+export function orderTotal(subtotal: number, fulfillment: string): number { return (Math.round(subtotal * 100) + Math.round(deliveryFee(fulfillment) * 100)) / 100; }

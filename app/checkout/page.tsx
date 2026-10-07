@@ -1,5 +1,6 @@
-﻿"use client";
+"use client";
 
+import { deliveryFee, orderTotal } from "@/lib/fulfillment-pricing";
 import { createId } from "@/lib/create-id";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -41,6 +42,8 @@ type RealOrder = {
   order_number?: string;
   tracking_token?: string;
   subtotal?: number | string;
+  delivery_fee?: number | string;
+  total?: number | string;
   status?: string;
   fulfillment?: Fulfillment;
   created_at?: string;
@@ -411,9 +414,9 @@ export default function CheckoutPage() {
     setDetailsError("");
     setOrderError("");
 
-    if (!fulfillment) {
+    if (!fulfillment || fulfillment === "shipping") {
       setDetailsError(
-        "Please choose pickup, delivery, or shipping."
+        "Please choose local meetup or local delivery."
       );
       return;
     }
@@ -657,9 +660,7 @@ export default function CheckoutPage() {
         trackingToken:
           realOrder.tracking_token,
 
-        subtotal:
-          quote.subtotal,
-
+        subtotal: Number(realOrder.total),
         fulfillment,
 
         paymentCollected:
@@ -892,7 +893,7 @@ export default function CheckoutPage() {
               </p>
 
               <p className="mt-4">
-                Subtotal:{" "}
+                Total before tax:{" "}
                 <strong>
                   {money(
                     Number(
@@ -1374,15 +1375,11 @@ export default function CheckoutPage() {
                                 [
                                   [
                                     "pickup",
-                                    "Store Pickup",
+                                    "Local Meetup",
                                   ],
                                   [
                                     "delivery",
                                     "Local Delivery",
-                                  ],
-                                  [
-                                    "shipping",
-                                    "Shipping",
                                   ],
                                 ] as const
                               ).map(
@@ -1429,16 +1426,12 @@ export default function CheckoutPage() {
                               "pickup" && (
                               <div className="mt-5">
                                 <h3 className="font-bold">
-                                  Store Pickup
+                                  Local Meetup
                                 </h3>
 
                                 <p className="store-muted">
                                   You&apos;ll
-                                  collect your
-                                  order at the
-                                  designated
-                                  pickup
-                                  location
+                                  collect your order at the agreed meetup location
                                   after
                                   confirmation.
                                 </p>
@@ -1700,7 +1693,7 @@ export default function CheckoutPage() {
                             <h3 className="font-bold mt-5">
                               {fulfillment ===
                               "pickup"
-                                ? "Store Pickup"
+                                ? "Local Meetup"
                                 : fulfillment ===
                                     "delivery"
                                   ? "Local Delivery"
@@ -1838,10 +1831,7 @@ export default function CheckoutPage() {
                               !quote?.canCheckout ||
                               !fulfillment
                             }
-                            total={
-                              quote?.subtotal ||
-                              0
-                            }
+                            total={orderTotal(quote?.subtotal || 0, fulfillment)}
                             onApplePay={
                               openPayment
                             }
@@ -1938,12 +1928,7 @@ export default function CheckoutPage() {
                         </strong>
                       </p>
 
-                      <p className="store-muted">
-                        Taxes, shipping
-                        and delivery fees
-                        are not yet
-                        included.
-                      </p>
+                      {fulfillment === "delivery" && <p className="store-cart-total">Local delivery fee <strong>{money(deliveryFee(fulfillment))}</strong></p>}<p className="store-cart-total">Total before tax <strong>{money(orderTotal(quote?.subtotal || 0, fulfillment))}</strong></p><p className="store-muted">Taxes are not yet included.</p>
 
                       {quote &&
                         !quote.canCheckout && (
@@ -2041,7 +2026,7 @@ export default function CheckoutPage() {
             <strong>
               {fulfillment ===
               "pickup"
-                ? "Store Pickup"
+                ? "Local Meetup"
                 : fulfillment ===
                     "delivery"
                   ? "Local Delivery"
@@ -2055,9 +2040,7 @@ export default function CheckoutPage() {
             </span>
 
             <strong>
-              {money(
-                quote?.subtotal || 0
-              )}
+              {money(orderTotal(quote?.subtotal || 0, fulfillment))}
             </strong>
           </div>
 
