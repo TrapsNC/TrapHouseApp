@@ -5,6 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { collectionFor, collections } from "@/lib/catalog";
 import { StoreFooter, StoreHeader } from "./components/StoreChrome";
+const categoryImages: Record<string, string> = {
+  DISPOSABLES: "/categories/disposables.png",
+  THCA: "/categories/thca.png",
+  TOBACCO: "/categories/tobacco.png",
+  ACCESSORIES: "/categories/accessories.png",
+};
 
 type Product = {
   id: string;
@@ -230,59 +236,31 @@ export default function Home() {
           aria-label="Shop collections"
           className="store-collections"
         >
-          {collections.map(
-            (group) => (
-              <button
-                className="store-collection"
-                key={group}
-                onClick={() =>
-                  chooseCategory(group)
+          {collections.map((group) => (
+            <button
+              className="store-collection"
+              key={group}
+              onClick={() => chooseCategory(group)}
+            >
+              <img
+                src={
+                  categoryImages[group] ||
+                  "/categories/accessories.png"
                 }
-              >
-                <div
-                  style={{
-                    background:
-                      "#111111",
-                    minHeight: 220,
-                    display: "flex",
-                    alignItems:
-                      "center",
-                    justifyContent:
-                      "center",
-                    border:
-                      "1px solid #222",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize:
-                        "1.4rem",
-                      letterSpacing:
-                        "0.12em",
-                      color: "white",
-                      textTransform:
-                        "uppercase",
-                    }}
-                  >
-                    {group}
-                  </span>
-                </div>
+                alt={`${group} collection`}
+              />
 
-                <span>
-                  {group}{" "}
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      display:
-                        "inline",
-                    }}
-                  >
-                    ↗
-                  </span>
+              <span>
+                {group}{" "}
+                <span
+                  aria-hidden="true"
+                  style={{ display: "inline" }}
+                >
+                  ↗
                 </span>
-              </button>
-            )
-          )}
+              </span>
+            </button>
+          ))}
         </section>
 
         <section
@@ -311,7 +289,7 @@ export default function Home() {
 
             <input
               aria-label="Search products"
-              placeholder="Search products…"
+              placeholder="Search productsâ€¦"
               value={search}
               onChange={(event) =>
                 setSearch(
@@ -364,7 +342,7 @@ export default function Home() {
               </option>
 
               <option value="name">
-                Name: A–Z
+                Name: Aâ€“Z
               </option>
             </select>
 
@@ -393,7 +371,7 @@ export default function Home() {
             role="status"
           >
             {loading
-              ? "Loading products…"
+              ? "Loading productsâ€¦"
               : error ||
                 `${filtered.length} products`}
           </p>
@@ -452,7 +430,7 @@ export default function Home() {
                     <span className="store-card-action">
                       {product.stock <=
                       0
-                        ? "VIEW PRODUCT · SOLD OUT"
+                        ? "VIEW PRODUCT Â· SOLD OUT"
                         : "CHOOSE OPTIONS"}
                     </span>
                   </>
