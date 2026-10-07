@@ -1,4 +1,4 @@
-﻿{
+{
   "crons": [
     {
       "path": "/api/admin/orders/id-cleanup",
