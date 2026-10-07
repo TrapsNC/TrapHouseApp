@@ -321,21 +321,13 @@ export default function Home() {
                 )
               }
             >
-              <option value="newest">
-                Newest first
-              </option>
+              <option value="newest">Newest first</option>
 
-              <option value="price-low">
-                Price: low to high
-              </option>
+              <option value="price-low">Price: low to high</option>
 
-              <option value="price-high">
-                Price: high to low
-              </option>
+              <option value="price-high">Price: high to low</option>
 
-              <option value="name">
-                Name: AÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“Z
-              </option>
+              <option value="name">Name: A-Z</option>
             </select>
 
             <label className="text-xs flex items-center gap-2">
@@ -363,7 +355,7 @@ export default function Home() {
             role="status"
           >
             {loading
-              ? "Loading productsÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦"
+              ? "Loading productsÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦"
               : error ||
                 `${filtered.length} products`}
           </p>
@@ -422,7 +414,7 @@ export default function Home() {
                     <span className="store-card-action">
                       {product.stock <=
                       0
-                        ? "VIEW PRODUCT ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· SOLD OUT"
+                        ? "VIEW PRODUCT ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· SOLD OUT"
                         : "CHOOSE OPTIONS"}
                     </span>
                   </>
