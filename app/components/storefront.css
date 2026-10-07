@@ -1172,3 +1172,62 @@
     object-fit: contain;
   }
 }
+/* FINAL MOBILE OVERFLOW FIX */
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+.storefront,
+.store-container,
+.store-grid,
+.store-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.store-card h3,
+.store-card-action {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+@media(max-width:767px) {
+
+  .store-container {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .store-grid {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .store-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .store-card-image {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .store-card-image img {
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  .store-card-action {
+    width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+  }
+}
