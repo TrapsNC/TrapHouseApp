@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { StoreInfoPage, infoPages } from "@/app/components/StoreInfoPage";
+
+export const instant = false;
 export function generateStaticParams() {
  return Object.keys(infoPages).filter(path=>path.startsWith("/policies/")).map(path=>({slug:path.split("/").pop()!}));
 }

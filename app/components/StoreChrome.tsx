@@ -75,7 +75,7 @@ export function StoreHeader() {
           >
             Cart{" "}
             <span aria-hidden="true">
-              â†—
+              Ã¢â€ â€”
             </span>
           </button>
         </div>
@@ -127,7 +127,7 @@ export function StoreHeader() {
                 setOpen(false)
               }
             >
-              Ã—
+              Ãƒâ€”
             </button>
           </div>
 
@@ -146,7 +146,7 @@ export function StoreHeader() {
               setOpen(false)
             }
           >
-            View full cart â†’
+            View full cart Ã¢â€ â€™
           </Link>
 
           <button
@@ -261,13 +261,7 @@ export function StoreFooter() {
           Legal notice
         </Link>
 
-        <a
-          href="https://traphousenc.com/pages/data-sharing-opt-out"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Your privacy choices â†—
-        </a>
+        
       </nav>
 
       <p className="store-footer-small">
@@ -277,7 +271,7 @@ export function StoreFooter() {
       </p>
 
       <p className="store-footer-small">
-        Â© {year} TRAP HOUSE NC
+        Ã‚Â© {year} TRAP HOUSE NC
       </p>
     </footer>
   );
