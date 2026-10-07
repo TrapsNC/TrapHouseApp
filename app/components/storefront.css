@@ -1159,3 +1159,16 @@
 .demo-order-popup p {
   margin: 8px 0;
 }
+/* MOBILE PRODUCT IMAGE FIX */
+@media (max-width: 767px) {
+  .store-card-image {
+    height: 110px;
+    overflow: hidden;
+  }
+
+  .store-card-image img {
+    width: 100%;
+    height: 110px;
+    object-fit: contain;
+  }
+}
