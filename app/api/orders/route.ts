@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { adminDatabase } from "@/lib/admin-db";
 import {
@@ -130,6 +131,9 @@ export async function POST(
       503
     );
   }
+
+  const limited = await enforceRateLimit(request, "orders");
+  if (limited) return limited;
 
   try {
     let body: OrderRequest;

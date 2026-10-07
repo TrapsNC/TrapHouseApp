@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { adminDatabase } from "@/lib/admin-db";
 
@@ -22,6 +23,8 @@ function reply(body: object, status: number) {
 }
 
 export async function POST(request: Request) {
+  const limited = await enforceRateLimit(request, "idUpload");
+  if (limited) return limited;
   try {
     const formData = await request.formData();
 

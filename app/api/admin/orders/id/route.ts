@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { adminDatabase } from "@/lib/admin-db";
@@ -84,6 +85,8 @@ async function requireAdmin(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const limited = await enforceRateLimit(request, "adminId");
+  if (limited) return limited;
   const admin = await requireAdmin(request);
 
   if (!admin.ok) {

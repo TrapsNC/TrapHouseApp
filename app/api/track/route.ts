@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 import { NextResponse } from "next/server";
 import { adminDatabase } from "@/lib/admin-db";
@@ -8,6 +9,8 @@ const uuidPattern =
 const orderNumberPattern = /^TH-[A-F0-9]{12}$/;
 
 export async function POST(request: Request) {
+  const limited = await enforceRateLimit(request, "tracking");
+  if (limited) return limited;
   try {
     const body = await request.json();
 

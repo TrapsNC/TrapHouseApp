@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { adminDatabase } from "@/lib/admin-db";
@@ -12,6 +13,8 @@ function reply(body: object, status: number) {
 }
 
 export async function GET(request: Request) {
+  const limited = await enforceRateLimit(request, "adminRead");
+  if (limited) return limited;
   try {
     const authorization =
       request.headers.get("authorization");

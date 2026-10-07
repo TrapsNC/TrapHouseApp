@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { adminDatabase } from "@/lib/admin-db";
@@ -108,7 +109,7 @@ async function cleanupExpiredIds() {
       );
     }
 
-    let abandonedChecked = uploads?.length ?? 0;
+    const abandonedChecked = uploads?.length ?? 0;
     let abandonedDeletedFiles = 0;
     let abandonedDeletedRows = 0;
     let abandonedSkippedLinked = 0;
@@ -249,7 +250,7 @@ async function cleanupExpiredIds() {
       );
     }
 
-    let reviewedChecked =
+    const reviewedChecked =
       reviewedOrders?.length ?? 0;
 
     let reviewedDeletedFiles = 0;
@@ -408,6 +409,8 @@ async function cleanupExpiredIds() {
 export async function POST(
   request: Request
 ) {
+  const limited = await enforceRateLimit(request, "adminCleanup");
+  if (limited) return limited;
   const db = await requireAdmin(request);
 
   if (!db) {
