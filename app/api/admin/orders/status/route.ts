@@ -294,6 +294,9 @@ export async function PATCH(request: Request) {
       })
       .eq("id", orderId)
       .eq("status", order.status)
+      .eq("fulfillment", order.fulfillment)
+      .eq("payment_status", order.payment_status)
+      .eq("id_review_status", order.id_review_status)
       .select(
         "id,status,fulfillment,payment_status,id_review_status,updated_at"
       )
