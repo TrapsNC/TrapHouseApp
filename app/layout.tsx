@@ -19,14 +19,14 @@ export const metadata: Metadata = {
   },
 
   description:
-    "TRAP HOUSE NC — disposables, THCA, tobacco, accessories, pickup, delivery, and shipping.",
+    "TRAP HOUSE NC â€” disposables, THCA, tobacco, accessories, pickup, delivery, and shipping.",
 
   metadataBase: new URL("https://traphousenc.com"),
 
   icons: {
-    icon: "/icon.png?v=2",
-    shortcut: "/icon.png?v=2",
-    apple: "/icon.png?v=2",
+    icon: "/icon.png?v=3",
+    shortcut: "/icon.png?v=3",
+    apple: "/icon.png?v=3",
   },
 
   openGraph: {
