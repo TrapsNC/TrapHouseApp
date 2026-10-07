@@ -6,21 +6,119 @@ import { CartContents } from "./CartContents";
 import "./storefront.css";
 
 export function StoreHeader() {
- const [open,setOpen]=useState(false);
- const dialog=useRef<HTMLDialogElement>(null);
- useEffect(()=>{
-  if(!open) return;
-  const sheet=dialog.current;
-  sheet?.showModal();
-  const previous=document.body.style.overflow;
-  document.body.style.overflow="hidden";
-  return ()=>{sheet?.close();document.body.style.overflow=previous;};
- },[open]);
- return <>
-  <div className="store-announcement">WELCOME TO TRAP HOUSE NC</div>
-  <header className="store-header"><div className="store-header-top"><Link href="/#shop" className="store-search-link">Search</Link><Link href="/" aria-label="Trap House home" className="store-brand"><img src="https://traphousenc.com/cdn/shop/files/Trap_house_logo_with_fierce_bear.png?v=1775673356&width=600" alt="TRAP HOUSE"/></Link><button onClick={()=>setOpen(true)} className="store-cart-button">Cart <span aria-hidden="true">↗</span></button></div><nav aria-label="Collections" className="store-navigation">{collections.map(category=><a key={category} href={`/?category=${category}#shop`}>{category}</a>)}</nav></header>
-  <dialog ref={dialog} aria-label="Your cart" className="store-cart-dialog" onCancel={()=>setOpen(false)} onClose={()=>setOpen(false)} onClick={event=>{if(event.target===event.currentTarget)setOpen(false);}}><section className="store-cart-panel"><div className="store-cart-title"><h2>Your cart</h2><button autoFocus aria-label="Close cart" onClick={()=>setOpen(false)}>×</button></div>{open && <CartContents onNavigate={()=>setOpen(false)}/>}<Link href="/cart" className="cart-back-link" onClick={()=>setOpen(false)}>View full cart →</Link><button className="cart-back-link" onClick={()=>setOpen(false)}>Continue shopping</button></section></dialog>
- </>;
+  const [open, setOpen] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const sheet = dialog.current;
+    sheet?.showModal();
+
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      sheet?.close();
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  return (
+    <>
+      <div className="store-announcement">
+        WELCOME TO TRAP HOUSE NC
+      </div>
+
+      <header className="store-header">
+        <div className="store-header-top">
+          <Link
+            href="/#shop"
+            className="store-search-link"
+          >
+            Search
+          </Link>
+
+          <Link
+            href="/"
+            aria-label="Trap House home"
+            className="store-brand"
+          >
+            <strong style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "clamp(130px, 22vw, 170px)", minHeight: "clamp(80px, 13vw, 100px)", fontSize: "clamp(14px, 2.3vw, 18px)", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>TRAP HOUSE NC</strong>
+          </Link>
+
+          <button
+            onClick={() => setOpen(true)}
+            className="store-cart-button"
+          >
+            Cart <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+
+        <nav
+          aria-label="Collections"
+          className="store-navigation"
+        >
+          {collections.map((category) => (
+            <a
+              key={category}
+              href={`/?category=${category}#shop`}
+            >
+              {category}
+            </a>
+          ))}
+        </nav>
+      </header>
+
+      <dialog
+        ref={dialog}
+        aria-label="Your cart"
+        className="store-cart-dialog"
+        onCancel={() => setOpen(false)}
+        onClose={() => setOpen(false)}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            setOpen(false);
+          }
+        }}
+      >
+        <section className="store-cart-panel">
+          <div className="store-cart-title">
+            <h2>Your cart</h2>
+
+            <button
+              autoFocus
+              aria-label="Close cart"
+              onClick={() => setOpen(false)}
+            >
+              ×
+            </button>
+          </div>
+
+          {open && (
+            <CartContents
+              onNavigate={() => setOpen(false)}
+            />
+          )}
+
+          <Link
+            href="/cart"
+            className="cart-back-link"
+            onClick={() => setOpen(false)}
+          >
+            View full cart →
+          </Link>
+
+          <button
+            className="cart-back-link"
+            onClick={() => setOpen(false)}
+          >
+            Continue shopping
+          </button>
+        </section>
+      </dialog>
+    </>
+  );
 }
 
 export function StoreFooter() {
