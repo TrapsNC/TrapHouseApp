@@ -271,7 +271,7 @@ export function StoreFooter() {
       </p>
 
       <p className="store-footer-small">
-        Ãƒâ€šÃ‚Â© {year} TRAP HOUSE NC
+        Copyright {year} TRAP HOUSE NC
       </p>
     </footer>
   );
