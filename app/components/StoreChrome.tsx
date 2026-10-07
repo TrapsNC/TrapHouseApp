@@ -1,13 +1,19 @@
 "use client";
+
 import Link from "next/link";
-import { useEffect,useRef,useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { collections } from "@/lib/catalog";
 import { CartContents } from "./CartContents";
 import "./storefront.css";
 
 export function StoreHeader() {
   const [open, setOpen] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
+  const dialog =
+    useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -15,12 +21,17 @@ export function StoreHeader() {
     const sheet = dialog.current;
     sheet?.showModal();
 
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const previous =
+      document.body.style.overflow;
+
+    document.body.style.overflow =
+      "hidden";
 
     return () => {
       sheet?.close();
-      document.body.style.overflow = previous;
+
+      document.body.style.overflow =
+        previous;
     };
   }, [open]);
 
@@ -44,14 +55,28 @@ export function StoreHeader() {
             aria-label="Trap House home"
             className="store-brand"
           >
-            <strong style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "clamp(130px, 22vw, 170px)", minHeight: "clamp(80px, 13vw, 100px)", fontSize: "clamp(14px, 2.3vw, 18px)", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>TRAP HOUSE NC</strong>
+            <img
+              src="/trap-house-logo.png"
+              alt="TRAP HOUSE NC"
+              style={{
+                width:
+                  "clamp(130px, 22vw, 170px)",
+                height: "auto",
+                display: "block",
+              }}
+            />
           </Link>
 
           <button
-            onClick={() => setOpen(true)}
+            onClick={() =>
+              setOpen(true)
+            }
             className="store-cart-button"
           >
-            Cart <span aria-hidden="true">↗</span>
+            Cart{" "}
+            <span aria-hidden="true">
+              ↗
+            </span>
           </button>
         </div>
 
@@ -59,14 +84,16 @@ export function StoreHeader() {
           aria-label="Collections"
           className="store-navigation"
         >
-          {collections.map((category) => (
-            <a
-              key={category}
-              href={`/?category=${category}#shop`}
-            >
-              {category}
-            </a>
-          ))}
+          {collections.map(
+            (category) => (
+              <a
+                key={category}
+                href={`/?category=${category}#shop`}
+              >
+                {category}
+              </a>
+            )
+          )}
         </nav>
       </header>
 
@@ -74,10 +101,17 @@ export function StoreHeader() {
         ref={dialog}
         aria-label="Your cart"
         className="store-cart-dialog"
-        onCancel={() => setOpen(false)}
-        onClose={() => setOpen(false)}
+        onCancel={() =>
+          setOpen(false)
+        }
+        onClose={() =>
+          setOpen(false)
+        }
         onClick={(event) => {
-          if (event.target === event.currentTarget) {
+          if (
+            event.target ===
+            event.currentTarget
+          ) {
             setOpen(false);
           }
         }}
@@ -89,7 +123,9 @@ export function StoreHeader() {
             <button
               autoFocus
               aria-label="Close cart"
-              onClick={() => setOpen(false)}
+              onClick={() =>
+                setOpen(false)
+              }
             >
               ×
             </button>
@@ -97,21 +133,27 @@ export function StoreHeader() {
 
           {open && (
             <CartContents
-              onNavigate={() => setOpen(false)}
+              onNavigate={() =>
+                setOpen(false)
+              }
             />
           )}
 
           <Link
             href="/cart"
             className="cart-back-link"
-            onClick={() => setOpen(false)}
+            onClick={() =>
+              setOpen(false)
+            }
           >
             View full cart →
           </Link>
 
           <button
             className="cart-back-link"
-            onClick={() => setOpen(false)}
+            onClick={() =>
+              setOpen(false)
+            }
           >
             Continue shopping
           </button>
@@ -122,8 +164,121 @@ export function StoreHeader() {
 }
 
 export function StoreFooter() {
- const [year,setYear]=useState(2026);
- useEffect(()=>{const timer=setTimeout(()=>setYear(new Date().getFullYear()),0);return()=>clearTimeout(timer);},[]);
- return <footer className="store-footer"><p className="store-footer-heading">Discover the Unseen.</p><p>Find your next favorite at Trap House NC.</p><div className="store-footer-links"><Link href="/#shop">SHOP ALL</Link>{collections.map(category=><a key={category} href={`/?category=${category}#shop`}>{category}</a>)}<Link href="/cart">CART</Link></div><nav aria-label="Store information" className="store-footer-links"><Link href="/pages/about-us">ABOUT US</Link><Link href="/pages/contact">CONTACT</Link><Link href="/pages/delivery">DELIVERY INFORMATION</Link><Link href="/pages/lab-results">LAB RESULTS</Link></nav><nav aria-label="Policies" className="store-footer-links store-policy-links"><Link href="/policies/privacy-policy">Privacy policy</Link><Link href="/policies/refund-policy">Refund policy</Link><Link href="/policies/terms-of-service">Terms of service</Link><Link href="/policies/shipping-policy">Shipping policy</Link><Link href="/policies/contact-information">Contact information</Link><Link href="/policies/legal-notice">Legal notice</Link><a href="https://traphousenc.com/pages/data-sharing-opt-out" target="_blank" rel="noopener noreferrer">Your privacy choices ↗</a></nav><p className="store-footer-small">21+ only. Delivery and shipping eligibility are confirmed before checkout.</p><p className="store-footer-small">© {year} TRAP HOUSE NC</p></footer>;
-}
+  const [year, setYear] =
+    useState(2026);
 
+  useEffect(() => {
+    const timer = setTimeout(
+      () =>
+        setYear(
+          new Date().getFullYear()
+        ),
+      0
+    );
+
+    return () =>
+      clearTimeout(timer);
+  }, []);
+
+  return (
+    <footer className="store-footer">
+      <p className="store-footer-heading">
+        Discover the Unseen.
+      </p>
+
+      <p>
+        Find your next favorite at
+        Trap House NC.
+      </p>
+
+      <div className="store-footer-links">
+        <Link href="/#shop">
+          SHOP ALL
+        </Link>
+
+        {collections.map(
+          (category) => (
+            <a
+              key={category}
+              href={`/?category=${category}#shop`}
+            >
+              {category}
+            </a>
+          )
+        )}
+
+        <Link href="/cart">
+          CART
+        </Link>
+      </div>
+
+      <nav
+        aria-label="Store information"
+        className="store-footer-links"
+      >
+        <Link href="/pages/about-us">
+          ABOUT US
+        </Link>
+
+        <Link href="/pages/contact">
+          CONTACT
+        </Link>
+
+        <Link href="/pages/delivery">
+          DELIVERY INFORMATION
+        </Link>
+
+        <Link href="/pages/lab-results">
+          LAB RESULTS
+        </Link>
+      </nav>
+
+      <nav
+        aria-label="Policies"
+        className="store-footer-links store-policy-links"
+      >
+        <Link href="/policies/privacy-policy">
+          Privacy policy
+        </Link>
+
+        <Link href="/policies/refund-policy">
+          Refund policy
+        </Link>
+
+        <Link href="/policies/terms-of-service">
+          Terms of service
+        </Link>
+
+        <Link href="/policies/shipping-policy">
+          Shipping policy
+        </Link>
+
+        <Link href="/policies/contact-information">
+          Contact information
+        </Link>
+
+        <Link href="/policies/legal-notice">
+          Legal notice
+        </Link>
+
+        <a
+          href="https://traphousenc.com/pages/data-sharing-opt-out"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Your privacy choices ↗
+        </a>
+      </nav>
+
+      <p className="store-footer-small">
+        21+ only. Delivery and
+        shipping eligibility are
+        confirmed before checkout.
+      </p>
+
+      <p className="store-footer-small">
+        © {year} TRAP HOUSE NC
+      </p>
+    </footer>
+  );
+}
