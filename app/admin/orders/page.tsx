@@ -182,7 +182,6 @@ export default function AdminOrdersPage() {
           body: JSON.stringify({
             orderId: order.id,
             confirmed: true,
-            amountCents: Math.round(amount * 100),
           }),
         }
       );
