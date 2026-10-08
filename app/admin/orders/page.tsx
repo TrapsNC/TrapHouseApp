@@ -956,7 +956,7 @@ export default function AdminOrdersPage() {
                           <button
                             type="button"
                             disabled={
-                              idBusyOrder === order.id ||
+                              isTerminal || idBusyOrder === order.id ||
                               order.id_review_status === "approved"
                             }
                             onClick={() =>
@@ -970,7 +970,7 @@ export default function AdminOrdersPage() {
                           <button
                             type="button"
                             disabled={
-                              idBusyOrder === order.id ||
+                              isTerminal || idBusyOrder === order.id ||
                               order.id_review_status === "rejected"
                             }
                             onClick={() =>
