@@ -470,9 +470,10 @@ export async function POST(
       Create the order + items.
     */
     const {
+      data: savedOrder,
       error: createError,
     } = await db.rpc(
-      "create_customer_order",
+      "create_customer_order_with_id",
       {
         p_request_id: requestId,
         p_customer_name:
@@ -497,6 +498,7 @@ export async function POST(
               item.quantity,
           })
         ),
+        p_payment_method: paymentMethod,
         p_expected_subtotal:
           quote.subtotal,
       }
@@ -545,103 +547,20 @@ export async function POST(
         );
       }
 
+      if (String(createError.message).includes("ID upload expired") ||
+          String(createError.message).includes("Please securely upload")) {
+        return fail(String(createError.message), 400);
+      }
       throw new Error(
         "Order database function failed."
       );
     }
 
-    /*
-      Attach the private ID to the exact
-      order that was just created.
-
-      We SELECT the order here instead of
-      trusting the RPC return shape. This
-      fixes the missing tracking-number
-      problem too.
-    */
-    const {
-      data: savedOrder,
-      error: attachError,
-    } = await db
-      .from("orders")
-      .update({
-        payment_method: paymentMethod,
-        id_document_path:
-          pendingId.storage_path,
-
-        id_uploaded_at:
-          pendingId.created_at,
-
-        id_review_status:
-          "pending",
-
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq(
-        "request_id",
-        requestId
-      )
-      .select(
-        `
-        id,
-        order_number,
-        tracking_token,
-        subtotal,
-        delivery_fee,
-        total,
-        status,
-        fulfillment,
-        payment_status,
-        payment_method,
-        id_review_status,
-        created_at
-        `
-      )
-      .single();
-
-    if (
-      attachError ||
-      !savedOrder
-    ) {
-      console.error(
-        "ID ATTACH ERROR:",
-        attachError?.message ??
-          "Order not found after creation."
-      );
-
-      throw new Error(
-        "Order was created but ID attachment failed."
-      );
+    if (!savedOrder || typeof savedOrder.id !== "string" ||
+        typeof savedOrder.order_number !== "string" ||
+        typeof savedOrder.tracking_token !== "string") {
+      throw new Error("Order database function returned an invalid receipt.");
     }
-
-    /*
-      The permanent order now references
-      the ID, so remove only the temporary
-      pointer row.
-    */
-    const {
-      error:
-        pendingDeleteError,
-    } = await db
-      .from(
-        "pending_id_uploads"
-      )
-      .delete()
-      .eq(
-        "request_id",
-        requestId
-      );
-
-    if (
-      pendingDeleteError
-    ) {
-      console.error(
-        "PENDING ID CLEANUP ERROR:",
-        pendingDeleteError.message
-      );
-    }
-
     await Promise.all([
       notifyOwnerOfOrder(savedOrder),
       notifyCustomerOfOrder(savedOrder, customerEmail),
