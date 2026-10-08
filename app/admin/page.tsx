@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 type Product = {
@@ -205,12 +206,20 @@ export default function AdminPage() {
             </h1>
           </div>
 
-          <button
-            onClick={logout}
-            className="rounded-xl border border-zinc-700 px-4 py-2 text-sm font-bold"
-          >
-            LOG OUT
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <Link
+              href="/admin/orders"
+              className="rounded-xl border border-zinc-700 px-4 py-2 text-sm font-bold"
+            >
+              CUSTOMER ORDERS
+            </Link>
+            <button
+              onClick={logout}
+              className="rounded-xl border border-zinc-700 px-4 py-2 text-sm font-bold"
+            >
+              LOG OUT
+            </button>
+          </div>
         </header>
 
         <section className="mt-8 rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
