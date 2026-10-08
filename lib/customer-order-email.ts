@@ -9,8 +9,8 @@ type CustomerAlertOrder = {
 };
 
 // Send only to the validated address belonging to this saved order request.
-export async function notifyCustomerOfOrder(order: CustomerAlertOrder, customerEmail: string) {
-  if (process.env.ENABLE_CUSTOMER_ORDER_EMAILS !== "true") return "disabled";
+export async function notifyCustomerOfOrder(order: CustomerAlertOrder, customerEmail: string, test = false) {
+  if (!test && process.env.ENABLE_CUSTOMER_ORDER_EMAILS !== "true") return "disabled";
   const key = process.env.SENDGRID_API_KEY?.trim();
   const from = process.env.ORDER_ALERT_FROM_EMAIL?.trim();
   const to = customerEmail.trim();
@@ -28,8 +28,9 @@ export async function notifyCustomerOfOrder(order: CustomerAlertOrder, customerE
       body: JSON.stringify({
         personalizations: [{ to: [{ email: to }] }],
         from: { email: from, name: "TrapHouseNC Orders" },
-        subject: "TrapHouseNC: order request received",
+        subject: test ? "TEST: TrapHouseNC customer confirmation" : "TrapHouseNC: order request received",
         content: [{ type: "text/plain", value: [
+          ...(test ? ["TEST EMAIL ONLY. No order was placed, no payment was collected, and the sample tracking details will not retrieve an order."] : []),
           `We received your order request: ${order.order_number}`,
           `${method} · $${Number(order.total).toFixed(2)}`,
           "This is a request confirmation, not payment or fulfillment approval. Payment has not been collected and ID review is pending.",

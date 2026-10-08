@@ -237,6 +237,29 @@ export default function AdminOrdersPage() {
     void loadOrders(true);
   }, [loadOrders]);
 
+  const [emailTestBusy, setEmailTestBusy] = useState(false);
+  const [emailTestMessage, setEmailTestMessage] = useState("");
+
+  async function sendEmailTest() {
+    setEmailTestBusy(true);
+    setEmailTestMessage("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Please sign in again.");
+      const response = await fetch("/api/admin/orders/email-test", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not send the test.");
+      setEmailTestMessage(result.message);
+    } catch (error) {
+      setEmailTestMessage(error instanceof Error ? error.message : "Could not send the test.");
+    } finally {
+      setEmailTestBusy(false);
+    }
+  }
+
   async function logout() {
     await supabase.auth.signOut();
     router.replace("/login");
@@ -585,6 +608,14 @@ export default function AdminOrdersPage() {
             </button>
 
             <button
+              onClick={() => void sendEmailTest()}
+              disabled={emailTestBusy}
+              className="rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold disabled:opacity-50"
+            >
+              {emailTestBusy ? "SENDING..." : "TEST CUSTOMER EMAIL"}
+            </button>
+
+            <button
               onClick={logout}
               className="rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold"
             >
@@ -592,6 +623,7 @@ export default function AdminOrdersPage() {
             </button>
           </div>
         </header>
+        {emailTestMessage && <p role="status" className="mt-4 text-sm">{emailTestMessage}</p>}
 
         <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
