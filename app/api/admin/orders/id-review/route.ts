@@ -175,6 +175,8 @@ export async function PATCH(
       .select(
         `
         id,
+        status,
+        updated_at,
         id_document_path,
         id_review_status,
         id_reviewed_at,
@@ -206,6 +208,9 @@ export async function PATCH(
       );
     }
 
+    if (["completed", "cancelled"].includes(order.status)) {
+      return reply({ error: "Completed or cancelled orders cannot be reviewed." }, 409);
+    }
     const reviewedAt =
       new Date().toISOString();
 
@@ -228,6 +233,10 @@ export async function PATCH(
           reviewedAt,
       })
       .eq("id", orderId)
+      .eq("status", order.status)
+      .eq("id_review_status", order.id_review_status)
+      .eq("id_document_path", order.id_document_path)
+      .eq("updated_at", order.updated_at)
       .select(
         `
         id,
@@ -242,9 +251,7 @@ export async function PATCH(
       updateError ||
       !updated
     ) {
-      throw new Error(
-        "ID review update failed."
-      );
+      return reply({ error: "The order changed. Refresh before reviewing its ID." }, 409);
     }
 
     return reply(
