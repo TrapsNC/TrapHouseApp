@@ -243,6 +243,24 @@ export async function PATCH(request: Request) {
       );
     }
 
+    if (nextStatus === "cancelled") {
+      const { data: cancelled, error: cancelError } = await admin.db.rpc(
+        "cancel_customer_order",
+        { p_order_id: orderId, p_expected_status: order.status }
+      );
+      if (cancelError || !cancelled) {
+        const conflict = cancelError?.message === "Order changed before cancellation." ||
+          cancelError?.message === "Order already cancelled." ||
+          cancelError?.message === "Completed orders cannot be cancelled.";
+        return reply(
+          { error: conflict
+            ? "The order changed before cancellation. Refresh and try again."
+            : "Could not cancel the order and restore inventory." },
+          conflict ? 409 : 503
+        );
+      }
+      return reply({ success: true, order: cancelled }, 200);
+    }
     const fulfillmentStatuses = [
       "preparing",
       "ready_for_pickup",
