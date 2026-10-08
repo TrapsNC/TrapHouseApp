@@ -26,6 +26,11 @@ type Order = {
   status: string;
   payment_status: string;
   payment_method: string | null;
+  payment_received_amount: number | string | null;
+  refund_status: "none" | "required" | "refunded";
+  refund_amount: number | string | null;
+  refunded_at: string | null;
+  refunded_by: string | null;
   id_document_path: string | null;
   id_uploaded_at: string | null;
   id_review_status: "pending" | "approved" | "rejected";
@@ -128,6 +133,95 @@ export default function AdminOrdersPage() {
     } catch(error) { setOrderMessages(current=>({...current,[order.id]:error instanceof Error?error.message:"Payment confirmation failed."})); }
     finally { setUpdatingOrder(null); }
   }
+  async function confirmRefund(order: Order) {
+    const amount = Number(order.payment_received_amount);
+
+    if (!Number.isFinite(amount) || amount < 0) {
+      setOrderMessages((current) => ({
+        ...current,
+        [order.id]: "The recorded payment amount is invalid.",
+      }));
+      return;
+    }
+
+    const method =
+      order.payment_method === "cashapp"
+        ? "Cash App"
+        : order.payment_method === "zelle"
+          ? "Zelle"
+          : "Cash";
+
+    if (
+      !window.confirm(
+        `Confirm you actually refunded ${money(amount)} by ${method}?`
+      )
+    ) {
+      return;
+    }
+
+    setUpdatingOrder(order.id);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
+
+      const response = await fetch(
+        "/api/admin/orders/refund",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            orderId: order.id,
+            confirmed: true,
+            amountCents: Math.round(amount * 100),
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Could not record refund."
+        );
+      }
+
+      setOrders((current) =>
+        current.map((existing) =>
+          existing.id === order.id
+            ? { ...existing, ...result.order }
+            : existing
+        )
+      );
+
+      setOrderMessages((current) => ({
+        ...current,
+        [order.id]: result.alreadyRefunded
+          ? "Refund was already recorded."
+          : "Refund recorded successfully.",
+      }));
+    } catch (error) {
+      setOrderMessages((current) => ({
+        ...current,
+        [order.id]:
+          error instanceof Error
+            ? error.message
+            : "Refund confirmation failed.",
+      }));
+    } finally {
+      setUpdatingOrder(null);
+    }
+  }
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -884,6 +978,64 @@ export default function AdminOrdersPage() {
                             locked until payment is
                             verified.
                           </p>
+                        )}
+
+                        {order.status === "cancelled" &&
+                          order.payment_status === "paid" &&
+                          order.refund_status === "required" && (
+                            <div className="mt-3 rounded-lg border border-amber-700 bg-amber-950/30 p-3">
+                              <p className="font-bold text-amber-400">
+                                REFUND REQUIRED
+                              </p>
+
+                              <p className="mt-1 text-xs text-zinc-300">
+                                Refund{" "}
+                                {money(
+                                  Number(
+                                    order.payment_received_amount
+                                  )
+                                )}
+                                {" "}to the customer.
+                              </p>
+
+                              <button
+                                type="button"
+                                disabled={
+                                  updatingOrder === order.id
+                                }
+                                onClick={() =>
+                                  void confirmRefund(order)
+                                }
+                                className="mt-3 rounded-lg bg-amber-400 px-4 py-2 text-sm font-bold text-black disabled:opacity-40"
+                              >
+                                {updatingOrder === order.id
+                                  ? "RECORDING..."
+                                  : "MARK REFUNDED"}
+                              </button>
+                            </div>
+                          )}
+
+                        {order.refund_status === "refunded" && (
+                          <div className="mt-3 rounded-lg border border-green-800 bg-green-950/30 p-3">
+                            <p className="font-bold text-green-400">
+                              REFUNDED
+                            </p>
+
+                            {order.refund_amount !== null && (
+                              <p className="mt-1 text-sm text-zinc-300">
+                                {money(order.refund_amount)}
+                              </p>
+                            )}
+
+                            {order.refunded_at && (
+                              <p className="mt-1 text-xs text-zinc-500">
+                                Recorded{" "}
+                                {new Date(
+                                  order.refunded_at
+                                ).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
 
