@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -14,24 +14,72 @@ export default function CostsPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(true);
+  const unlockToken = useRef("");
+  const [pinSet, setPinSet] = useState<boolean | null>(null);
+  const [pin, setPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [expiresAt, setExpiresAt] = useState(0);
   const load = useCallback(async () => {
+    if (!unlockToken.current) return;
+    const currentUnlock = unlockToken.current;
     setBusy(true); setError("");
     try {
       const { data } = await supabase.auth.getSession();
       if (!data.session) { router.replace("/login"); return; }
-      const response = await fetch("/api/admin/costs", { headers: { Authorization: `Bearer ${data.session.access_token}` } });
+      const response = await fetch("/api/admin/costs", { headers: { Authorization: `Bearer ${data.session.access_token}`, "x-owner-unlock": currentUnlock } });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load costs.");
-      setReport(result);
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not load costs."); }
+      if (unlockToken.current === currentUnlock) setReport(result);
+    } catch (e) { if (unlockToken.current === currentUnlock) { unlockToken.current = ""; setReport(null); setExpiresAt(0); setError(e instanceof Error ? e.message : "Could not load costs."); } }
     finally { setBusy(false); }
   }, [router]);
-  useEffect(() => { const timer = setTimeout(() => void load(), 0); return () => clearTimeout(timer); }, [load]);
+  useEffect(() => {
+    let active = true;
+    async function check() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) { router.replace("/login"); return; }
+        const response = await fetch("/api/admin/owner-pin", { headers: { Authorization: `Bearer ${data.session.access_token}` } });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
+        if (active) setPinSet(result.pinSet);
+      } catch (e) { if (active) setError(e instanceof Error ? e.message : "Owner access unavailable."); }
+      finally { if (active) setBusy(false); }
+    }
+    void check();
+    return () => { active = false; unlockToken.current = ""; };
+  }, [router]);
+  function lock() { unlockToken.current = ""; setReport(null); setExpiresAt(0); setPin(""); setConfirmPin(""); setError(""); }
+  useEffect(() => {
+    if (!expiresAt) return;
+    const hide = () => { if (document.visibilityState === "hidden") lock(); };
+    const timer = setTimeout(lock, Math.max(0, expiresAt - Date.now()));
+    document.addEventListener("visibilitychange", hide);
+    return () => { clearTimeout(timer); document.removeEventListener("visibilitychange", hide); };
+  }, [expiresAt]);
+  async function unlock(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setBusy(true); setError("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) { router.replace("/login"); return; }
+      const response = await fetch("/api/admin/owner-pin", { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ action: pinSet ? "unlock" : "setup", pin, confirmPin }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      if (document.visibilityState === "hidden") return;
+      unlockToken.current = result.unlock; setExpiresAt(result.expiresAt); setPinSet(true); setPin(""); setConfirmPin("");
+      await load();
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not unlock figures."); }
+    finally { setBusy(false); }
+  }
   return <main className="min-h-screen bg-black p-5 text-white sm:p-8"><div className="mx-auto max-w-7xl">
     <p className="text-xs tracking-widest text-zinc-400">OWNER DASHBOARD</p>
     <h1 className="mt-2 text-3xl font-black">Inventory costs & potential profit</h1>
-    <div className="my-5 flex flex-wrap gap-4 text-sm font-bold"><Link href="/admin">INVENTORY</Link><Link href="/admin/purchases">PURCHASES</Link><Link href="/admin/orders">ORDERS</Link><button onClick={() => void load()} disabled={busy}>{busy ? "LOADING…" : "REFRESH"}</button></div>
+    <div className="my-5 flex flex-wrap gap-4 text-sm font-bold"><Link href="/admin">INVENTORY</Link><Link href="/admin/purchases">PURCHASES</Link><Link href="/admin/orders">ORDERS</Link>{report && <><button onClick={() => void load()} disabled={busy}>{busy ? "LOADING…" : "REFRESH"}</button><button onClick={lock}>LOCK FIGURES</button></>}</div>
     {error && <p role="alert" className="rounded-xl border border-red-800 p-4 text-red-300">{error}</p>}
+    {!report && <section className="my-8 max-w-md rounded-2xl border border-emerald-900 bg-zinc-950 p-6"><h2 className="text-xl font-bold">Owner figures are locked</h2><p className="mt-3 text-sm text-zinc-400">Only the store owner can unlock spending, inventory costs and potential profit. Figures lock after 10 minutes or when you switch away.</p>
+      {busy && pinSet === null && <p className="mt-4" role="status">Checking owner access…</p>}
+      {pinSet !== null && <form onSubmit={unlock} className="mt-5 space-y-4"><p className="text-sm">{pinSet ? "Enter your owner PIN." : "Create your owner PIN. Keep it private."}</p><label className="block text-sm">{pinSet ? "Owner PIN" : "New owner PIN"}<input type="password" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={4} autoComplete="off" required value={pin} onChange={event => setPin(event.target.value)} className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3" /></label>{!pinSet && <label className="block text-sm">Confirm PIN<input type="password" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={4} autoComplete="off" required value={confirmPin} onChange={event => setConfirmPin(event.target.value)} className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3" /></label>}<p className="text-xs text-zinc-400">Exactly 4 numbers. Your PIN is stored as a protected hash.</p><button disabled={busy} className="w-full rounded-xl bg-emerald-400 px-4 py-3 font-bold text-black disabled:opacity-40">{busy ? "PLEASE WAIT…" : pinSet ? "UNLOCK FIGURES" : "SET PIN & UNLOCK"}</button></form>}
+    </section>}
     {report && <>
       <div className="grid gap-4 sm:grid-cols-3">{[["Remaining stock cost", report.costCents], ["Potential sales", report.revenueCents], ["Potential gross profit", report.grossProfitCents]].map(([title, amount]) => <div key={title} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5"><p className="text-sm text-zinc-400">{title}</p><p className="mt-2 text-3xl font-black text-emerald-400">{money(amount as number)}</p><p className="mt-2 text-xs text-zinc-400">Matched stock only</p></div>)}</div>
       <p className="mt-4 text-sm text-zinc-300">{report.coveredProducts} stocked products included · {report.reviewProducts} need review. Checked {new Date(report.asOf).toLocaleString()}.</p>

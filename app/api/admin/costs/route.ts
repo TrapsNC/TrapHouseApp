@@ -1,6 +1,5 @@
 import { connection } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { adminDatabase } from "@/lib/admin-db";
+import { financeOwner, validUnlock } from "@/lib/owner-finance";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { inventoryCosts } from "@/lib/inventory-costs";
 
@@ -11,15 +10,10 @@ export async function GET(request: Request) {
   const limited = await enforceRateLimit(request, "adminRead");
   if (limited) return limited;
   try {
-    const token = request.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];
-    if (!token) return reply({ error: "Please sign in." }, 401);
-    const auth = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
-    const { data, error } = await auth.auth.getUser(token);
-    if (error || !data.user) return reply({ error: "Please sign in again." }, 401);
-    const db = adminDatabase();
-    const admin = await db.from("admin_users").select("user_id").eq("user_id", data.user.id).maybeSingle();
-    if (admin.error) throw new Error("Admin verification unavailable.");
-    if (!admin.data) return reply({ error: "Admin access required." }, 403);
+    const owner = await financeOwner(request);
+    if (!owner) return reply({ error: "Store owner sign-in required." }, 403);
+    if (!validUnlock(request.headers.get("x-owner-unlock"), owner.ownerId)) return reply({ error: "Enter your owner PIN to view financial figures." }, 423);
+    const db = owner.db;
     const [products, variants, receipt] = await Promise.all([
       db.from("products").select("id,name,stock,price").order("name"),
       db.from("product_variants").select("product_id,stock,price"),
