@@ -10,9 +10,18 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false);
   const [dob, setDob] = useState("");
   const [error, setError] = useState("");
+  const [remember, setRemember] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => {
-      try { setVerified(sessionStorage.getItem("trap-dob-age-confirmed-v1") === "true"); } catch {}
+      let confirmed = false;
+      try { confirmed = sessionStorage.getItem("trap-dob-age-confirmed-v1") === "true"; } catch {}
+      try {
+        const expiresAt = Number(localStorage.getItem("trap-age-remember-until-v1"));
+        const now = Date.now();
+        if (Number.isFinite(expiresAt) && expiresAt > now && expiresAt <= now + 30 * 24 * 60 * 60 * 1000) confirmed = true;
+        else localStorage.removeItem("trap-age-remember-until-v1");
+      } catch {}
+      setVerified(confirmed);
       setReady(true);
     }, 0);
     return () => clearTimeout(timer);
@@ -30,6 +39,10 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
     const age = now.getFullYear() - year - (now.getMonth() < month - 1 || (now.getMonth() === month - 1 && now.getDate() < day) ? 1 : 0);
     if (age < 21) { setError("You must be 21 or older to enter this store."); return; }
     try { sessionStorage.setItem("trap-dob-age-confirmed-v1", "true"); } catch {}
+    try {
+      if (remember) localStorage.setItem("trap-age-remember-until-v1", String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+      else localStorage.removeItem("trap-age-remember-until-v1");
+    } catch {}
     setDob(""); setError(""); setVerified(true);
   }
 
@@ -46,6 +59,7 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
         <label htmlFor="entry-dob" className="text-sm font-bold">Date of birth</label>
         <input id="entry-dob" name="dateOfBirth" type="date" required min="1900-01-01" value={dob} onChange={event => { setDob(event.target.value); setError(""); }} aria-describedby="entry-dob-error entry-dob-privacy" className="mt-2 block min-h-12 w-full min-w-0 rounded-xl border border-zinc-600 bg-black px-3 py-3 text-white [color-scheme:dark]" />
         <p id="entry-dob-error" role="alert" className="mt-3 text-sm text-red-400">{error}</p>
+        <label className="mt-4 flex items-center gap-3 text-sm text-zinc-300"><input type="checkbox" checked={remember} onChange={event=>setRemember(event.target.checked)} className="h-5 w-5 accent-emerald-400" />Remember me on this device for 30 days</label>
         <button type="submit" className="mt-3 w-full rounded-xl bg-white px-4 py-4 font-bold text-black">VERIFY AGE & ENTER</button>
       </form>
       <a href="https://google.com" className="mt-3 block rounded-xl border border-zinc-700 px-4 py-3 text-sm">EXIT</a>
