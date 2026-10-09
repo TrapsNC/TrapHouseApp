@@ -248,6 +248,7 @@ export default function AdminPage() {
               CUSTOMER ORDERS
             </Link>
             <button type="button" onClick={() => void exportInventory()} disabled={exportingInventory} className="rounded-xl bg-green-700 px-4 py-3 text-sm font-bold disabled:opacity-40">{exportingInventory ? "DOWNLOADING..." : "DOWNLOAD INVENTORY CSV"}</button>
+            <Link href="/shop" className="rounded-xl border border-zinc-600 px-4 py-3 text-sm font-bold text-white">VIEW STORE</Link>
             <Link href="/admin/costs" className="rounded-xl border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">COSTS & PROFIT</Link>
             <Link href="/admin/purchases" className="rounded-xl border border-green-700 bg-green-950 px-4 py-3 text-sm font-bold text-green-300">PURCHASES</Link>
 
