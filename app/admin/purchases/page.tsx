@@ -83,7 +83,7 @@ export default function PurchasesPage() {
     }
     const normalize = (value?: string | null) => {
       const cleaned = (value || "").trim().replace(/^'+/, "");
-      return /^d{13}$/.test(cleaned) && cleaned.startsWith("0") ? cleaned.slice(1) : cleaned;
+      return /^\d{13}$/.test(cleaned) && cleaned.startsWith("0") ? cleaned.slice(1) : cleaned;
     };
     const matches = variants.filter(v => normalize(v.barcode) === normalize(barcode));
     const productMatches = products.filter(p => normalize(p.barcode) === normalize(barcode));
