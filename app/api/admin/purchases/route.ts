@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { adminDatabase } from "@/lib/admin-db";
 import { enforceRateLimit } from "@/lib/rate-limit";
@@ -20,6 +21,7 @@ async function authorize(request: Request) {
 }
 
 export async function GET(request: Request) {
+  await connection();
   const limited = await enforceRateLimit(request, "adminRead");
   if (limited) return limited;
   try {
