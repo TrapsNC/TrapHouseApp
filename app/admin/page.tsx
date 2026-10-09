@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import BarcodeScanner from "./purchases/BarcodeScanner";
 import { downloadInventory } from "@/lib/download-inventory";
 
 type Product = {
@@ -13,6 +14,7 @@ type Product = {
   price: number | string;
   stock: number;
   image_url?: string | null;
+  barcode?: string | null;
 };
 
 export default function AdminPage() {
@@ -20,6 +22,16 @@ export default function AdminPage() {
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
+  const [search, setSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [showScanner, setShowScanner] = useState(false);
+  const [variantBarcodes, setVariantBarcodes] = useState<{ product_id: string; barcode: string | null }[]>([]);
+  const normalizeBarcode = (value: string) => value.trim().replace(/^'+/, "").replace(/^0(?=\d{12}$)/, "");
+  const query = search.trim().toLowerCase();
+  const visibleProducts = products.filter(product => {
+    const matchesSearch = !query || product.name.toLowerCase().includes(query) || (product.category || "").toLowerCase().includes(query) || (!!product.barcode && normalizeBarcode(product.barcode).includes(normalizeBarcode(query))) || variantBarcodes.some(variant => variant.product_id === product.id && !!variant.barcode && normalizeBarcode(variant.barcode).includes(normalizeBarcode(query)));
+    return matchesSearch && (stockFilter === "all" || (stockFilter === "low" ? product.stock > 0 && product.stock <= 5 : product.stock <= 0));
+  });
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -78,6 +90,8 @@ export default function AdminPage() {
     }
 
     setProducts(data || []);
+    const variantResult = await supabase.from("product_variants").select("product_id,barcode");
+    setVariantBarcodes(variantResult.data || []);
   }
 
   async function uploadImage() {
@@ -344,9 +358,19 @@ export default function AdminPage() {
             </button>
           </div>
 
+          <div className="mb-4 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+            <div className="flex flex-wrap gap-3">
+              <label className="min-w-48 flex-1 text-sm text-zinc-300">Search inventory<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Name, category or barcode" className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white" /></label>
+              <button type="button" onClick={()=>setShowScanner(true)} className="self-end rounded-xl border border-emerald-700 px-4 py-3 font-bold text-emerald-300">SCAN BARCODE</button>
+            </div>
+            <div className="flex flex-wrap gap-2">{[["all","All items",products.length],["low","Low stock (1–5)",products.filter(p=>p.stock>0 && p.stock<=5).length],["out","Out of stock",products.filter(p=>p.stock<=0).length]].map(([value,label,count])=><button type="button" key={value} aria-pressed={stockFilter===value} onClick={()=>setStockFilter(value as string)} className={`rounded-xl border px-3 py-2 text-sm font-bold ${stockFilter===value ? "border-emerald-400 bg-emerald-400 text-black" : "border-zinc-700 text-zinc-300"}`}>{label} ({count})</button>)}</div>
+            <p role="status" className="text-sm text-zinc-400">Showing {visibleProducts.length} of {products.length} items.</p>
+            {showScanner && <BarcodeScanner onClose={()=>setShowScanner(false)} onScan={barcode=>{setSearch(barcode);setStockFilter("all");setShowScanner(false);}} />}
+          </div>
+          {visibleProducts.length===0 && <p className="py-6 text-zinc-400">No items match. Try another search or stock filter.</p>}
           <div className="space-y-3">
 
-            {products.map((product) => (
+            {visibleProducts.map((product) => (
               <div
                 key={product.id}
                 className="flex flex-col justify-between gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 sm:flex-row sm:items-center"
@@ -378,6 +402,7 @@ export default function AdminPage() {
 
                     <p className="mt-1">
                       Stock: {product.stock}
+                      {product.stock <= 0 ? <span className="ml-2 text-sm font-bold text-red-400">OUT OF STOCK</span> : product.stock <= 5 ? <span className="ml-2 text-sm font-bold text-amber-400">LOW STOCK</span> : null}
                     </p>
                   </div>
 
