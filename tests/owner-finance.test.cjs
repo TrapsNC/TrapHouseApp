@@ -29,18 +29,20 @@ test('unlocks are owner-bound, signed and expire', () => {
   assert.equal(helpers.validUnlock(`${payload}.${signature}`, 'owner-one'), false);
 });
 test('cost figures are blocked before any inventory queries when PIN is absent', async () => {
-  const route = load('app/api/admin/costs/route.ts', { 'next/server': { connection: async () => {} }, '@/lib/rate-limit': { enforceRateLimit: async () => null }, '@/lib/owner-finance': { financeOwner: async () => ({ ownerId: 'owner', db: { from: () => { throw Error('Must not query figures'); } } }), validUnlock: () => false }, '@/lib/inventory-costs': {} });
+  const route = load('app/api/admin/costs/route.ts', { 'next/server': { connection: async () => {} }, '@/lib/rate-limit': { enforceRateLimit: async () => null }, '@/lib/owner-finance': { financeOwner: async () => ({ ownerId: 'owner', db: { from: () => { throw Error('Must not query figures'); } } }), validUnlock: () => false }, '@/lib/inventory-costs': {}, '@/lib/cost-edits': {} });
   const response = await route.GET(new Request('http://example.test/api', { headers: { authorization: 'Bearer test' } }));
   assert.equal(response.status, 423);
   assert.equal((await response.json()).costCents, undefined);
+  assert.equal((await route.PATCH(new Request('http://example.test/api', { method: 'PATCH', body: '{}' }))).status, 423);
 });
 test('non-owner cannot request PIN setup or financial figures', async () => {
-  const deps = { 'next/server': { connection: async () => {} }, 'node:crypto': crypto, '@/lib/rate-limit': { enforceRateLimit: async () => null }, '@/lib/owner-finance': { financeOwner: async () => null }, '@/lib/inventory-costs': {} };
+  const deps = { 'next/server': { connection: async () => {} }, 'node:crypto': crypto, '@/lib/rate-limit': { enforceRateLimit: async () => null }, '@/lib/owner-finance': { financeOwner: async () => null }, '@/lib/inventory-costs': {}, '@/lib/cost-edits': {} };
   const pins = load('app/api/admin/owner-pin/route.ts', deps);
   const costs = load('app/api/admin/costs/route.ts', deps);
   assert.equal((await pins.GET(new Request('http://example.test'))).status, 403);
   assert.equal((await pins.POST(new Request('http://example.test', { method: 'POST', body: JSON.stringify({ action: 'setup', pin: '1234', confirmPin: '1234' }) }))).status, 403);
   assert.equal((await costs.GET(new Request('http://example.test'))).status, 403);
+  assert.equal((await costs.PATCH(new Request('http://example.test', { method: 'PATCH', body: '{}' }))).status, 403);
 });
 test('shared owner attempt budget rejects guessing before PIN comparison', async () => {
   const route = load('app/api/admin/owner-pin/route.ts', { 'node:crypto': crypto, 'next/server': {}, '@/lib/rate-limit': { enforceRateLimit: async () => null }, '@/lib/owner-finance': { financeOwner: async () => ({ ownerId: 'owner', config: { hash: 'exists' }, db: { rpc: async () => ({ data: { allowed: false } }) } }), matchesPin: () => { throw Error('Must not compare'); } } });

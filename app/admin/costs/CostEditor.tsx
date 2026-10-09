@@ -1,0 +1,35 @@
+"use client";
+import { useState } from "react";
+import type { CostEdits, Handwritten } from "@/lib/cost-edits";
+
+type Product = { id: string; name: string; stock: number; purchasedUnits: number | null; unitCostCents: number | null };
+export default function CostEditor({ edits, products, getHeaders, onSaved }: { edits: CostEdits; products: Product[]; getHeaders: () => Promise<Record<string,string>>; onSaved: () => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [receipt, setReceipt] = useState<Handwritten>(() => edits.handwritten ?? { supplier: "", date: "", totalCents: 194400, confirmed: false, lines: [["RAZ LTX",12,60000],["Geek Bar Pulse 15K",11,46200],["Geek Bar Pulse X",6,31200],["Munchies Lil Ripper",1,null],["Slugger",1,null],["Munchies Jelly Roll",3,27000]].map(([name,boxes,amountCents]) => ({ productId: products.find(p=>p.name.includes(name as string))?.id ?? "", boxes: boxes as number, unitsPerBox: null, amountCents: amountCents as number | null })) });
+  const [productId, setProductId] = useState(products[0]?.id ?? "");
+  const selected = products.find(p=>p.id===productId);
+  const [unitCost, setUnitCost] = useState("");
+  const [coveredUnits, setCoveredUnits] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const field = "mt-1 w-full rounded-xl border border-zinc-700 bg-black px-3 py-3 text-white";
+  async function save(body: object) {
+    setBusy(true); setMessage("");
+    try {
+      const response = await fetch("/api/admin/costs", { method:"PATCH", headers:await getHeaders(), body: JSON.stringify({ ...body, version: edits.version }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      setMessage("Saved. Stock quantities were not changed.");
+      await onSaved();
+    } catch(e) { setMessage(e instanceof Error ? e.message : "Could not save edits."); }
+    finally { setBusy(false); }
+  }
+  return <section className="my-6 rounded-2xl border border-emerald-900 p-5"><button type="button" className="font-bold text-emerald-400" onClick={()=>setOpen(!open)} aria-expanded={open}>EDIT RECEIPT DETAILS & COSTS</button>
+    {open && <div className="mt-5 space-y-8"><button type="button" onClick={()=>setOpen(false)} className="rounded-xl border border-zinc-700 px-4 py-3 font-bold text-white">← BACK TO COSTS</button>
+      <form onSubmit={e=>{e.preventDefault(); void save({action:"unitCost",productId,unitCostCents:Math.round(Number(unitCost)*100),coveredUnits:Number(coveredUnits)});}} className="space-y-3"><h2 className="text-lg font-bold">Edit a product’s unit cost</h2><p className="text-sm text-zinc-400">Enter what one sellable item cost you and how many units this cost covers. This replaces its receipt average until you remove the edit.</p><label className="block text-sm">Product<select value={productId} onChange={e=>{setProductId(e.target.value);setUnitCost("");setCoveredUnits("");}} className={field}>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><p className="text-sm text-zinc-400">Current stock: {selected?.stock ?? 0}. Current estimated unit cost: {selected?.unitCostCents === null ? "Missing" : `$${((selected?.unitCostCents ?? 0)/100).toFixed(2)}`}.</p><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">Cost per sellable item ($)<input type="number" step="0.01" min="0" required value={unitCost} onChange={e=>setUnitCost(e.target.value)} className={field}/></label><label className="text-sm">Units covered by this cost<input type="number" step="1" min="1" required value={coveredUnits} onChange={e=>setCoveredUnits(e.target.value)} className={field}/></label></div><div className="flex flex-wrap gap-3"><button disabled={busy} className="rounded-xl bg-emerald-400 px-4 py-3 font-bold text-black">SAVE UNIT COST</button>{edits.overrides[productId] && <button type="button" disabled={busy} onClick={()=>void save({action:"removeUnitCost",productId})} className="rounded-xl border border-zinc-700 px-4 py-3">USE RECEIPT COST AGAIN</button>}</div></form>
+      <form onSubmit={e=>{e.preventDefault();void save({action:"handwritten",receipt});}} className="space-y-4"><h2 className="text-lg font-bold">Update handwritten receipt</h2><p className="text-sm text-zinc-400">The readable quantities and amounts are prefilled for you to check. Blank fields are still unknown. You can save an incomplete draft.</p><div className="grid gap-3 sm:grid-cols-3"><label className="text-sm">Supplier<input value={receipt.supplier} maxLength={120} onChange={e=>setReceipt({...receipt,supplier:e.target.value})} className={field}/></label><label className="text-sm">Receipt date<input type="date" value={receipt.date} onChange={e=>setReceipt({...receipt,date:e.target.value})} className={field}/></label><label className="text-sm">Receipt total ($)<input type="number" min="0.01" step="0.01" required value={receipt.totalCents/100} onChange={e=>setReceipt({...receipt,totalCents:Math.round(Number(e.target.value)*100)})} className={field}/></label></div>
+      {receipt.lines.map((line,index)=><div key={index} className="rounded-xl border border-zinc-800 p-4"><p className="font-bold">{products.find(p=>p.id===line.productId)?.name ?? "Unknown product"}</p><div className="mt-3 grid gap-3 sm:grid-cols-3">{[{label:"Boxes purchased",key:"boxes",value:line.boxes,step:"1"},{label:"Sellable items per box",key:"unitsPerBox",value:line.unitsPerBox ?? "",step:"1"},{label:"Total paid for this line ($)",key:"amountCents",value:line.amountCents === null ? "" : line.amountCents/100,step:"0.01"}].map(input=><label key={input.key} className="text-sm">{input.label}<input type="number" step={input.step} min={input.key === "amountCents" ? "0" : "1"} value={input.value} onChange={e=>setReceipt({...receipt,lines:receipt.lines.map((l,i)=>i===index?{...l,[input.key]:e.target.value === "" && input.key !== "boxes" ? null : input.key === "amountCents" ? Math.round(Number(e.target.value)*100):Number(e.target.value)}:l)})} className={field}/></label>)}</div></div>)}
+      <p className="text-sm">Entered line total: ${(receipt.lines.reduce((sum,l)=>sum+(l.amountCents??0),0)/100).toFixed(2)} / receipt total: ${(receipt.totalCents/100).toFixed(2)}</p><label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={receipt.confirmed} onChange={e=>setReceipt({...receipt,confirmed:e.target.checked})} className="mt-1"/>I checked every quantity and amount. Apply this receipt to cost estimates. All lines must match the receipt total.</label><p className="text-sm text-zinc-400">Leave unchecked to save a draft. Applying this updates costs only and does not receive goods or add stock.</p><button disabled={busy} className="rounded-xl bg-emerald-400 px-4 py-3 font-bold text-black">{busy?"SAVING…":receipt.confirmed?"SAVE & APPLY RECEIPT":"SAVE RECEIPT DRAFT"}</button></form>
+    </div>}{message && <p role="status" className="mt-4 text-sm text-amber-300">{message}</p>}
+  </section>;
+}
