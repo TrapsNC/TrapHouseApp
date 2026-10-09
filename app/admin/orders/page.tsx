@@ -143,7 +143,6 @@ export default function AdminOrdersPage() {
     } catch(error) { setOrderMessages(current=>({...current,[order.id]:error instanceof Error?error.message:"Payment confirmation failed."})); }
     finally { setUpdatingOrder(null); }
   }
-
   async function confirmRefund(order: Order) {
     const amount = Number(order.payment_received_amount);
 
@@ -182,18 +181,20 @@ export default function AdminOrdersPage() {
         return;
       }
 
-      const response = await fetch("/api/admin/orders/refund", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          orderId: order.id,
-          confirmed: true,
-          amountCents: Math.round(amount * 100),
-        }),
-      });
+      const response = await fetch(
+        "/api/admin/orders/refund",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            orderId: order.id,
+            confirmed: true,
+          }),
+        }
+      );
 
       const result = await response.json();
 
@@ -229,6 +230,7 @@ export default function AdminOrdersPage() {
       setUpdatingOrder(null);
     }
   }
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1063,6 +1065,64 @@ export default function AdminOrdersPage() {
                             locked until payment is
                             verified.
                           </p>
+                        )}
+
+                        {order.status === "cancelled" &&
+                          order.payment_status === "paid" &&
+                          order.refund_status === "required" && (
+                            <div className="mt-3 rounded-lg border border-amber-700 bg-amber-950/30 p-3">
+                              <p className="font-bold text-amber-400">
+                                REFUND REQUIRED
+                              </p>
+
+                              <p className="mt-1 text-xs text-zinc-300">
+                                Refund{" "}
+                                {money(
+                                  Number(
+                                    order.payment_received_amount
+                                  )
+                                )}
+                                {" "}to the customer.
+                              </p>
+
+                              <button
+                                type="button"
+                                disabled={
+                                  updatingOrder === order.id
+                                }
+                                onClick={() =>
+                                  void confirmRefund(order)
+                                }
+                                className="mt-3 rounded-lg bg-amber-400 px-4 py-2 text-sm font-bold text-black disabled:opacity-40"
+                              >
+                                {updatingOrder === order.id
+                                  ? "RECORDING..."
+                                  : "MARK REFUNDED"}
+                              </button>
+                            </div>
+                          )}
+
+                        {order.refund_status === "refunded" && (
+                          <div className="mt-3 rounded-lg border border-green-800 bg-green-950/30 p-3">
+                            <p className="font-bold text-green-400">
+                              REFUNDED
+                            </p>
+
+                            {order.refund_amount !== null && (
+                              <p className="mt-1 text-sm text-zinc-300">
+                                {money(order.refund_amount)}
+                              </p>
+                            )}
+
+                            {order.refunded_at && (
+                              <p className="mt-1 text-xs text-zinc-500">
+                                Recorded{" "}
+                                {new Date(
+                                  order.refunded_at
+                                ).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div>

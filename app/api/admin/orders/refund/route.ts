@@ -154,190 +154,80 @@ export async function PATCH(request: Request) {
       );
     }
 
-    if (
-      !Number.isInteger(body?.amountCents) ||
-      body.amountCents < 0
-    ) {
-      return reply(
-        { error: "Invalid refund amount." },
-        400
-      );
-    }
-
     const {
-      data: order,
-      error: orderError,
-    } = await admin.db
-      .from("orders")
-      .select(
-        "id,status,payment_status,payment_method,payment_received_amount,refund_status,refund_amount,refunded_at"
-      )
-      .eq("id", orderId)
-      .maybeSingle();
+      data: recorded,
+      error: refundError,
+    } = await admin.db.rpc(
+      "mark_order_refunded",
+      {
+        p_order_id: orderId,
+        p_refunded_by: admin.userId,
+      }
+    );
 
-    if (
-      orderError ||
-      !order
-    ) {
-      return reply(
-        { error: "Order not found." },
-        404
-      );
-    }
+    if (refundError) {
+      const message = refundError.message;
 
-    if (order.status !== "cancelled") {
-      return reply(
-        {
-          error:
-            "Only cancelled orders can be refunded.",
-        },
-        400
-      );
-    }
-
-    if (order.payment_status !== "paid") {
-      return reply(
-        {
-          error:
-            "This order was not marked paid.",
-        },
-        400
-      );
-    }
-
-    if (
-      !["cashapp", "zelle", "cash"].includes(
-        order.payment_method
-      )
-    ) {
-      return reply(
-        {
-          error:
-            "Unsupported payment method.",
-        },
-        400
-      );
-    }
-
-    const expectedAmount =
-      Number(order.payment_received_amount);
-
-    if (
-      !Number.isFinite(expectedAmount) ||
-      expectedAmount < 0
-    ) {
-      return reply(
-        {
-          error:
-            "The recorded payment amount is invalid.",
-        },
-        400
-      );
-    }
-
-    const expectedCents =
-      Math.round(expectedAmount * 100);
-
-    if (
-      body.amountCents !== expectedCents
-    ) {
-      return reply(
-        {
-          error:
-            "Refund amount must match the payment received.",
-        },
-        400
-      );
-    }
-
-    if (
-      order.refund_status === "refunded"
-    ) {
-      const recorded =
-        Number(order.refund_amount);
-
-      if (
-        Number.isFinite(recorded) &&
-        Math.round(recorded * 100) ===
-          expectedCents
-      ) {
-        return reply(
-          {
-            success: true,
-            alreadyRefunded: true,
-            order,
-          },
-          200
-        );
+      if (message.includes("Order not found.")) {
+        return reply({ error: "Order not found." }, 404);
       }
 
-      return reply(
-        {
-          error:
-            "This order already has a different refund record.",
-        },
-        409
-      );
+      if (message.includes("Access denied.")) {
+        return reply({ error: "Access denied." }, 403);
+      }
+
+      const badRequestMessages = [
+        "Invalid refund request.",
+        "Only cancelled orders can be refunded.",
+        "This order was not marked paid.",
+        "Unsupported payment method.",
+        "The recorded payment amount is invalid.",
+      ];
+
+      if (
+        badRequestMessages.some((candidate) =>
+          message.includes(candidate)
+        )
+      ) {
+        return reply({ error: message }, 400);
+      }
+
+      const conflictMessages = [
+        "This order does not require a refund.",
+        "This order already has a different refund record.",
+        "Recorded refunds are immutable.",
+      ];
+
+      if (
+        conflictMessages.some((candidate) =>
+          message.includes(candidate)
+        )
+      ) {
+        return reply({ error: message }, 409);
+      }
+
+      throw new Error("Atomic refund recording failed.");
     }
 
     if (
-      order.refund_status !== "required"
+      !recorded ||
+      typeof recorded !== "object" ||
+      Array.isArray(recorded)
     ) {
-      return reply(
-        {
-          error:
-            "This order does not require a refund.",
-        },
-        409
-      );
+      throw new Error("Invalid refund receipt.");
     }
-
-    const now =
-      new Date().toISOString();
 
     const {
-      data: updated,
-      error: updateError,
-    } = await admin.db
-      .from("orders")
-      .update({
-        refund_status: "refunded",
-        refund_amount: expectedAmount,
-        refunded_at: now,
-        refunded_by: admin.userId,
-        updated_at: now,
-      })
-      .eq("id", order.id)
-      .eq("status", "cancelled")
-      .eq("payment_status", "paid")
-      .eq("refund_status", "required")
-      .eq(
-        "payment_received_amount",
-        order.payment_received_amount
-      )
-      .select(
-        "id,status,payment_status,payment_method,payment_received_amount,refund_status,refund_amount,refunded_at,updated_at"
-      )
-      .maybeSingle();
-
-    if (
-      updateError ||
-      !updated
-    ) {
-      return reply(
-        {
-          error:
-            "The order changed before the refund could be recorded. Refresh and try again.",
-        },
-        409
-      );
-    }
+      already_refunded: alreadyRefunded,
+      ...order
+    } = recorded as Record<string, unknown>;
 
     return reply(
       {
         success: true,
-        alreadyRefunded: false,
-        order: updated,
+        alreadyRefunded:
+          alreadyRefunded === true,
+        order,
       },
       200
     );
