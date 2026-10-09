@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import EditItem from "./EditItem";
 import BarcodeScanner from "./purchases/BarcodeScanner";
 import { downloadInventory } from "@/lib/download-inventory";
 
@@ -22,6 +23,7 @@ export default function AdminPage() {
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
+  const [editing, setEditing] = useState<Product | null>(null);
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState("all");
   const [showScanner, setShowScanner] = useState(false);
@@ -221,7 +223,8 @@ export default function AdminPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-black text-white">
         <p className="text-zinc-400">Checking login...</p>
-      </main>
+  
+    </main>
     );
   }
 
@@ -410,6 +413,7 @@ export default function AdminPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={()=>setEditing(product)} className="rounded-xl border border-emerald-700 px-4 py-2 font-bold text-emerald-300">EDIT ITEM</button>
 
                   <button
                     onClick={() =>
@@ -466,6 +470,7 @@ export default function AdminPage() {
         </section>
 
       </div>
+      {editing && <EditItem key={editing.id} product={editing} onClose={()=>setEditing(null)} onSaved={loadProducts} />}
     </main>
   );
 }
