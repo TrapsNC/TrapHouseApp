@@ -518,7 +518,7 @@ export default function CheckoutPage() {
     });
   }
 
-  const [paymentMethod, setPaymentMethod] = useState("apple");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
 
   async function submitOrderRequest() {
     if (

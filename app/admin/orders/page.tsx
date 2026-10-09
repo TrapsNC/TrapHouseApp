@@ -115,6 +115,16 @@ function getStatusOptions(order: Order) {
   return options;
 }
 
+const idVerificationChecks = [
+  { key: "readableConfirmed", label: "ID is readable" },
+  { key: "validConfirmed", label: "ID is valid" },
+  { key: "dobMatchesConfirmed", label: "Date of birth matches the order" },
+  { key: "age21Confirmed", label: "Customer is 21 or older" },
+] as const;
+
+type IdVerificationCheck =
+  (typeof idVerificationChecks)[number]["key"];
+
 export default function AdminOrdersPage() {
   const router = useRouter();
 
@@ -244,6 +254,10 @@ export default function AdminOrdersPage() {
 
   const [idMessages, setIdMessages] = useState<
     Record<string, string>
+  >({});
+
+  const [idConfirmations, setIdConfirmations] = useState<
+    Record<string, Partial<Record<IdVerificationCheck, boolean>>>
   >({});
 
   const loadOrders = useCallback(
@@ -541,6 +555,22 @@ export default function AdminOrdersPage() {
     order: Order,
     status: "approved" | "rejected"
   ) {
+    const confirmations = idConfirmations[order.id] || {};
+
+    if (
+      status === "approved" &&
+      !idVerificationChecks.every(
+        ({ key }) => confirmations[key] === true
+      )
+    ) {
+      setIdMessages((current) => ({
+        ...current,
+        [order.id]:
+          "Confirm all four ID verification checks before approval.",
+      }));
+      return;
+    }
+
     if (
       status === "rejected" &&
       !window.confirm(
@@ -579,6 +609,7 @@ export default function AdminOrdersPage() {
           body: JSON.stringify({
             orderId: order.id,
             status,
+            ...confirmations,
           }),
         }
       );
@@ -610,6 +641,12 @@ export default function AdminOrdersPage() {
             : existingOrder
         )
       );
+
+      setIdConfirmations((current) => {
+        const next = { ...current };
+        delete next[order.id];
+        return next;
+      });
 
       setIdMessages((current) => ({
         ...current,
@@ -655,12 +692,65 @@ export default function AdminOrdersPage() {
     return matchesStatus && matchesSearch;
   });
 
-  const activeCount = orders.filter(
+  const storeOrders = orders.filter(
+    (order) => order.id !== "f777336e-beda-4bd2-b7a3-8b988bca133a"
+  );
+  const activeStoreOrders = storeOrders.filter(
+    (order) => !["completed", "cancelled"].includes(order.status)
+  );
+  const cents = (amount: number | string | null) =>
+    Math.round(Number(amount || 0) * 100);
+  const paidOrders = storeOrders.filter(
+    (order) => order.payment_status === "paid"
+  );
+  const collectedCents = paidOrders.reduce(
+    (sum, order) => sum + cents(
+      order.payment_received_amount ??
+      (order.payment_method === "cash"
+        ? Math.round(Number(order.total))
+        : order.total)
+    ),
+    0
+  );
+  const refundedCents = storeOrders.reduce(
+    (sum, order) => sum + (
+      order.refund_status === "refunded" ? cents(order.refund_amount) : 0
+    ),
+    0
+  );
+  const unpaidCents = activeStoreOrders.reduce(
+    (sum, order) => sum + (
+      order.payment_status !== "paid"
+        ? cents(order.payment_method === "cash"
+            ? Math.round(Number(order.total))
+            : order.total)
+        : 0
+    ),
+    0
+  );
+  const pendingIdCount = activeStoreOrders.filter(
+    (order) => order.id_review_status === "pending"
+  ).length;
+  const refundRequiredCount = storeOrders.filter(
+    (order) => order.refund_status === "required"
+  ).length;
+  const dashboardCards = [
+    { label: "Net collected", value: money((collectedCents - refundedCents) / 100), note: "Confirmed payments minus recorded refunds", color: "text-green-400" },
+    { label: "Profit", value: "Costs needed", note: "Add product costs and expenses to calculate profit", color: "text-zinc-400" },
+    { label: "Unpaid balance", value: money(unpaidCents / 100), note: "Amount due on active orders", color: "text-red-400" },
+    { label: "Refunds issued", value: money(refundedCents / 100), note: "Recorded refunds", color: "text-amber-400" },
+    { label: "Customer orders", value: String(storeOrders.length), note: "Test order excluded", color: "text-white" },
+    { label: "Active orders", value: String(activeStoreOrders.length), note: "Awaiting fulfillment or completion", color: "text-white" },
+    { label: "ID reviews pending", value: String(pendingIdCount), note: "Active orders waiting for ID review", color: "text-amber-400" },
+    { label: "Refunds to send", value: String(refundRequiredCount), note: "Cancelled orders needing a refund", color: "text-red-400" },
+  ];
+
+  const activeCount = storeOrders.filter(
     (order) =>
       !["completed", "cancelled"].includes(order.status)
   ).length;
 
-  const completedCount = orders.filter(
+  const completedCount = storeOrders.filter(
     (order) => order.status === "completed"
   ).length;
 
@@ -690,6 +780,8 @@ export default function AdminOrdersPage() {
               INVENTORY
             </Link>
 
+            <Link href="/admin/purchases" className="rounded-xl border border-green-700 bg-green-950 px-4 py-3 text-sm font-bold text-green-300">PURCHASES</Link>
+
             <button
               onClick={() => void loadOrders()}
               disabled={refreshing || loading}
@@ -716,35 +808,31 @@ export default function AdminOrdersPage() {
         </header>
         {emailTestMessage && <p role="status" className="mt-4 text-sm">{emailTestMessage}</p>}
 
-        <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-sm text-zinc-400">
-              Total Orders
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {orders.length}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-sm text-zinc-400">
-              Active Orders
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {activeCount}
+        <section className="mt-8" aria-label="Store overview">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="text-xl font-bold">Store overview</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Based on the latest 100 app orders. Test order excluded.
+              </p>
+            </div>
+            <p className="text-xs text-zinc-500">
+              {completedCount} completed · {activeCount} active
             </p>
           </div>
-
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-sm text-zinc-400">
-              Completed
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {completedCount}
-            </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {dashboardCards.map((card) => (
+              <div
+                key={card.label}
+                className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5"
+              >
+                <p className="text-sm text-zinc-400">{card.label}</p>
+                <p className={`mt-2 text-2xl font-bold ${card.color}`}>
+                  {loading || error ? "—" : card.value}
+                </p>
+                <p className="mt-2 text-xs text-zinc-500">{card.note}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -962,12 +1050,12 @@ export default function AdminOrdersPage() {
                           PAYMENT STATUS
                         </p>
 
-                        <p className="mt-1 font-bold capitalize">
+                        <p className={`mt-1 font-bold capitalize ${order.payment_status === "paid" ? "text-green-400" : "text-red-400"}`}>
                           {order.payment_status}
                           {order.payment_method && <span> · {order.payment_method}</span>}
                         </p>
 
-                        {order.payment_status !== "paid" && !["completed","cancelled"].includes(order.status) && order.payment_method && <button disabled={updatingOrder === order.id} onClick={() => void confirmPayment(order)} className="mt-2 underline">Confirm payment received ({money(order.payment_method === "cash" ? Math.round(Number(order.total)) : order.total)})</button>}
+                        {order.payment_status !== "paid" && !["completed","cancelled"].includes(order.status) && order.payment_method && <button type="button" disabled={updatingOrder === order.id} onClick={() => void confirmPayment(order)} className="mt-3 inline-flex cursor-pointer items-center justify-center rounded-xl border border-green-500 bg-green-700 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-green-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-400 disabled:cursor-not-allowed disabled:opacity-40">Confirm payment received ({money(order.payment_method === "cash" ? Math.round(Number(order.total)) : order.total)})</button>}
                         {order.payment_status !==
                           "paid" && (
                           <p className="mt-1 text-xs text-amber-400">
@@ -1084,6 +1172,41 @@ export default function AdminOrdersPage() {
                         )}
                       </div>
 
+                      {order.id_document_path &&
+                        order.id_review_status !== "approved" && (
+                          <fieldset
+                            className="mt-4 space-y-2 rounded-xl border border-zinc-800 p-4"
+                            disabled={isTerminal || idBusyOrder === order.id}
+                          >
+                            <legend className="px-1 text-sm font-bold">
+                              Confirm before approving
+                            </legend>
+                            {idVerificationChecks.map(({ key, label }) => (
+                              <label
+                                key={key}
+                                className="flex items-center gap-3 text-sm text-zinc-300"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 accent-green-600"
+                                  checked={idConfirmations[order.id]?.[key] === true}
+                                  onChange={(event) => {
+                                    const checked = event.target.checked;
+                                    setIdConfirmations((current) => ({
+                                      ...current,
+                                      [order.id]: {
+                                        ...current[order.id],
+                                        [key]: checked,
+                                      },
+                                    }));
+                                  }}
+                                />
+                                {label}
+                              </label>
+                            ))}
+                          </fieldset>
+                        )}
+
                       {!order.id_document_path ? (
                         <p className="mt-4 text-sm text-red-400">
                           No ID image is attached to this order.
@@ -1105,7 +1228,10 @@ export default function AdminOrdersPage() {
                             type="button"
                             disabled={
                               isTerminal || idBusyOrder === order.id ||
-                              order.id_review_status === "approved"
+                              order.id_review_status === "approved" ||
+                              !idVerificationChecks.every(
+                                ({ key }) => idConfirmations[order.id]?.[key] === true
+                              )
                             }
                             onClick={() =>
                               void reviewId(order, "approved")

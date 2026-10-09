@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { downloadInventory } from "@/lib/download-inventory";
 
 type Product = {
   id: string;
@@ -27,6 +28,7 @@ export default function AdminPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [saving, setSaving] = useState(false);
+  const [exportingInventory, setExportingInventory] = useState(false);
 
   useEffect(() => {
     async function checkLogin() {
@@ -45,6 +47,24 @@ export default function AdminPage() {
 
     checkLogin();
   }, [router]);
+
+  async function exportInventory() {
+    setExportingInventory(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) { router.replace("/login"); return; }
+      const response = await fetch("/api/admin/purchases", {
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not export inventory.");
+      downloadInventory(result.products, result.variants);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Could not export inventory.");
+    } finally {
+      setExportingInventory(false);
+    }
+  }
 
   async function loadProducts() {
     const { data, error } = await supabase
@@ -213,6 +233,9 @@ export default function AdminPage() {
             >
               CUSTOMER ORDERS
             </Link>
+            <button type="button" onClick={() => void exportInventory()} disabled={exportingInventory} className="rounded-xl bg-green-700 px-4 py-3 text-sm font-bold disabled:opacity-40">{exportingInventory ? "DOWNLOADING..." : "DOWNLOAD INVENTORY CSV"}</button>
+            <Link href="/admin/purchases" className="rounded-xl border border-green-700 bg-green-950 px-4 py-3 text-sm font-bold text-green-300">PURCHASES</Link>
+
             <button
               onClick={logout}
               className="rounded-xl border border-zinc-700 px-4 py-2 text-sm font-bold"

@@ -57,7 +57,7 @@ test('pickup and delivery require payment and ID, then complete without permitti
     assert.equal((await f.run('status', { status: 'preparing' })).status, 400);
     assert.equal((await f.run('payment', { received: true, amountCents: Math.round(f.order.total * 100) })).status, 200);
     assert.equal((await f.run('status', { status: 'preparing' })).status, 400);
-    assert.equal((await f.run('id-review', { status: 'approved' })).status, 200);
+    assert.equal((await f.run('id-review', { status: 'approved', readableConfirmed: true, validConfirmed: true, dobMatchesConfirmed: true, age21Confirmed: true })).status, 200);
     assert.equal((await f.run('status', { status: 'confirmed' })).status, 200);
     assert.equal((await f.run('status', { status: 'preparing' })).status, 200);
     assert.equal((await f.run('status', { status: fulfillment === 'pickup' ? 'ready_for_pickup' : 'out_for_delivery' })).status, 200);
@@ -75,7 +75,7 @@ test('cancelled orders reject repeated cancellation, payment, review, and reopen
   assert.equal((await f.run('status', { status: 'cancelled' })).status, 400);
   assert.equal((await f.run('status', { status: 'confirmed' })).status, 400);
   assert.equal((await f.run('payment', { received: true, amountCents: 1000 })).status, 409);
-  assert.equal((await f.run('id-review', { status: 'approved' })).status, 409);
+  assert.equal((await f.run('id-review', { status: 'approved', readableConfirmed: true, validConfirmed: true, dobMatchesConfirmed: true, age21Confirmed: true })).status, 409);
   assert.equal(f.cancellations(), 1);
   assert.equal(f.writes(), 0);
 });
@@ -83,21 +83,21 @@ test('rejected ID blocks fulfillment even after payment; a fresh approval permit
   const f = fixture({ payment_status: 'paid' });
   assert.equal((await f.run('id-review', { status: 'rejected' })).status, 200);
   assert.equal((await f.run('status', { status: 'completed' })).status, 400);
-  assert.equal((await f.run('id-review', { status: 'approved' })).status, 200);
+  assert.equal((await f.run('id-review', { status: 'approved', readableConfirmed: true, validConfirmed: true, dobMatchesConfirmed: true, age21Confirmed: true })).status, 200);
   assert.equal((await f.run('status', { status: 'preparing' })).status, 200);
 });
 test('stale ID reviews cannot overwrite newer reviews, lifecycle changes, or replaced documents', async () => {
   for (const race of [{ id_review_status: 'rejected' }, { status: 'cancelled' }, { status: 'completed' },
     { id_document_path: 'replacement.jpg' }, { id_document_path: null }, { updated_at: '2026-10-07T01:00:00.000Z' }]) {
     const f = fixture(); f.race(race);
-    assert.equal((await f.run('id-review', { status: 'approved' })).status, 409);
+    assert.equal((await f.run('id-review', { status: 'approved', readableConfirmed: true, validConfirmed: true, dobMatchesConfirmed: true, age21Confirmed: true })).status, 409);
     assert.equal(f.writes(), 0);
     for (const [key, value] of Object.entries(race)) assert.equal(f.order[key], value);
   }
 });
 test('ID review requires an existing document and a valid review choice', async () => {
   const f = fixture({ id_document_path: null });
-  assert.equal((await f.run('id-review', { status: 'approved' })).status, 400);
+  assert.equal((await f.run('id-review', { status: 'approved', readableConfirmed: true, validConfirmed: true, dobMatchesConfirmed: true, age21Confirmed: true })).status, 400);
   assert.equal((await f.run('id-review', { status: 'pending' })).status, 400);
   assert.equal(f.writes(), 0);
 });
@@ -108,4 +108,18 @@ test('all admin flow writes require sign-in and admin membership', async () => {
     const nonAdmin = fixture({}, false); assert.equal((await nonAdmin.run(name, body)).status, 403);
     assert.equal(f.writes(), 0); assert.equal(nonAdmin.writes(), 0);
   }
+});
+
+test('ID approval requires every check to be strictly true before any database write', async () => {
+  const checks = { readableConfirmed: true, validConfirmed: true, dobMatchesConfirmed: true, age21Confirmed: true };
+  for (const key of Object.keys(checks)) {
+    for (const value of [false, undefined, "true", 1]) {
+      const f = fixture();
+      assert.equal((await f.run('id-review', { status: 'approved', ...checks, [key]: value })).status, 400);
+      assert.equal(f.writes(), 0);
+    }
+  }
+  const f = fixture();
+  assert.equal((await f.run('id-review', { status: 'approved' })).status, 400);
+  assert.equal(f.writes(), 0);
 });

@@ -132,6 +132,17 @@ export async function PATCH(
   try {
     const body =
       await request.json();
+const readableConfirmed =
+  body.readableConfirmed === true;
+
+const validConfirmed =
+  body.validConfirmed === true;
+
+const dobMatchesConfirmed =
+  body.dobMatchesConfirmed === true;
+
+const age21Confirmed =
+  body.age21Confirmed === true;
 
     const orderId =
       typeof body?.orderId ===
@@ -162,6 +173,24 @@ export async function PATCH(
         {
           error:
             "Invalid ID review status.",
+        },
+        400
+      );
+    }
+
+    if (
+      status === "approved" &&
+      (
+        !readableConfirmed ||
+        !validConfirmed ||
+        !dobMatchesConfirmed ||
+        !age21Confirmed
+      )
+    ) {
+      return reply(
+        {
+          error:
+            "All ID verification checks must be confirmed before approval.",
         },
         400
       );
