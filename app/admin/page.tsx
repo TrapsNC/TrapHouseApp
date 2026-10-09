@@ -405,6 +405,15 @@ export default function AdminPage() {
 
                   <button
                     onClick={() =>
+                      changeStock(product.id, 5)
+                    }
+                    className="rounded-xl border border-zinc-700 px-4 py-2"
+                  >
+                    +5
+                  </button>
+
+                  <button
+                    onClick={() =>
                       changeStock(product.id, 10)
                     }
                     className="rounded-xl border border-zinc-700 px-4 py-2"
