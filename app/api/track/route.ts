@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const { data, error } = await db
       .from("orders")
       .select(
-        "order_number,status,fulfillment,created_at,updated_at"
+        "order_number,status,fulfillment,created_at,updated_at,payment_status,id_review_status,refund_status"
       )
       .eq("order_number", orderNumber)
       .eq("tracking_token", trackingToken)
@@ -76,6 +76,9 @@ export async function POST(request: Request) {
         order: {
           orderNumber: data.order_number,
           status: data.status,
+          paymentStatus: data.payment_status,
+          idReviewStatus: data.id_review_status,
+          refundStatus: data.refund_status,
           fulfillment: data.fulfillment,
           createdAt: data.created_at,
           updatedAt: data.updated_at,

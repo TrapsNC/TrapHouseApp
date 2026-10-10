@@ -914,7 +914,7 @@ export default function CheckoutPage() {
                 Fulfillment:{" "}
                 <strong>
                   {
-                    orderConfirmation.fulfillment
+                    orderConfirmation.fulfillment === "pickup" ? "Local Meetup" : orderConfirmation.fulfillment === "delivery" ? "Local Delivery" : "Shipping"
                   }
                 </strong>
               </p>
