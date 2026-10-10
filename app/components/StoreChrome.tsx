@@ -12,6 +12,8 @@ import "./storefront.css";
 
 export function StoreHeader() {
   const [open, setOpen] = useState(false);
+  const textDialog = useRef<HTMLDialogElement>(null);
+  const [copyMessage, setCopyMessage] = useState("");
   const dialog =
     useRef<HTMLDialogElement>(null);
 
@@ -109,6 +111,40 @@ export function StoreHeader() {
         </nav>
       </header>
 
+      {!open && (
+        <button
+          type="button"
+          onClick={() => { setCopyMessage(""); textDialog.current?.showModal(); }}
+          aria-label="Text Trap House NC at (424) 262-7604"
+          className="store-text-button"
+        >
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 3V11.5a10 10 0 0 1 20 0Z" />
+          </svg>
+          Text the store
+        </button>
+      )}
+
+      <dialog ref={textDialog} aria-labelledby="store-text-title" className="store-contact-dialog"
+        onClick={(event) => { if (event.target === event.currentTarget) textDialog.current?.close(); }}>
+        <div className="flex justify-between items-center gap-4">
+          <h2 id="store-text-title" className="text-xl font-bold">Text Trap House NC</h2>
+          <button type="button" aria-label="Close text options" className="p-3"
+            onClick={() => textDialog.current?.close()}>Close</button>
+        </div>
+        <p className="mt-4">Send your message to <strong>(424) 262-7604</strong>.</p>
+        <p className="mt-2 text-sm">On your phone, open Messages below. On a computer, copy the number into your texting app.</p>
+        <div className="flex flex-wrap gap-3 mt-5">
+          <a href="sms:+14242627604" className="store-primary p-3">Open Messages</a>
+          <button type="button" className="border rounded-lg p-3" onClick={async () => {
+            try { await navigator.clipboard.writeText("(424) 262-7604"); setCopyMessage("Number copied."); }
+            catch { setCopyMessage("Select and copy the number above."); }
+          }}>Copy number</button>
+          <a href="mailto:traphousenc919@gmail.com" className="underline p-3">Email instead</a>
+        </div>
+        <p role="status" className="mt-3">{copyMessage}</p>
+      </dialog>
+
       <dialog
         ref={dialog}
         aria-label="Your cart"
@@ -203,6 +239,7 @@ export function StoreFooter() {
         Trap House NC.
       </p>
 
+      <Link href="/rewards" className="underline block mb-4">REWARDS &amp; OFFERS</Link>
       <div className="store-footer-links">
         <Link href="/shop#shop">
           SHOP ALL

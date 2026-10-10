@@ -1263,3 +1263,35 @@ body {
   align-items: center;
   gap: 8px;
 }
+
+.store-text-button {
+  position: fixed;
+  right: 16px;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #65cda0;
+  color: #07140d;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 20px #0005;
+}
+.store-text-button:hover { background: #8ae0ba; }
+.store-text-button:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.store-footer { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.store-contact-dialog {
+  width: min(480px, calc(100vw - 32px));
+  margin: auto;
+  border: 1px solid #444;
+  border-radius: 16px;
+  padding: 24px;
+  background: #101010;
+  color: white;
+}
+.store-contact-dialog::backdrop { background: #000a; }
